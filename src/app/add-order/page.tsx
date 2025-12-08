@@ -22,7 +22,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useCollection, useFirestore, useUser } from '@/firebase';
+import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -69,7 +69,7 @@ export default function AddOrderPage() {
   // Firebase hooks
   const firestore = useFirestore();
   const { user } = useUser();
-  const customersRef = useMemo(() => {
+  const customersRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'customers');
   }, [firestore, user]);
