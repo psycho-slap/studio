@@ -50,28 +50,36 @@ export default function AddOrderPage() {
   });
 
   function onSubmit(data: OrderFormValues) {
-    // In a real app, you'd persist this data.
-    // For now, we'll simulate it and redirect.
-    // We can use localStorage to pass the new order to the main page.
-    const newOrder: Omit<Order, 'id' | 'status' | 'createdAt'> = data;
-    const newOrderWithTimestamp: Order = {
-        ...newOrder,
+    const drinkId = data.drinkId;
+    const customizations = data.customizations || '';
+    
+    const newOrder: Order = {
         id: `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        customerName: data.customerName,
+        drinkId: drinkId,
+        customizations: customizations,
         status: 'pending',
         createdAt: Date.now(),
     };
 
-    // Retrieve existing orders and add the new one
-    const existingOrders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]');
-    const updatedOrders = [newOrderWithTimestamp, ...existingOrders];
-    localStorage.setItem('orders', JSON.stringify(updatedOrders));
+    try {
+        const existingOrders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]');
+        const updatedOrders = [newOrder, ...existingOrders];
+        localStorage.setItem('orders', JSON.stringify(updatedOrders));
 
-
-    toast({
-      title: 'Заказ добавлен',
-      description: `Заказ для ${data.customerName} был добавлен в очередь.`,
-    });
-    router.push('/');
+        toast({
+            title: 'Заказ добавлен',
+            description: `Заказ для ${data.customerName} был добавлен в очередь.`,
+        });
+        router.push('/');
+    } catch (error) {
+        console.error("Failed to save order to localStorage:", error);
+        toast({
+            variant: "destructive",
+            title: "Ошибка",
+            description: "Не удалось сохранить заказ. Пожалуйста, попробуйте еще раз.",
+        });
+    }
   }
 
   return (

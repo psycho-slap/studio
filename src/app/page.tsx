@@ -112,10 +112,6 @@ export default function Home() {
     }
   }, [orders, toast]);
   
-  const sortedOrders = useMemo(() => {
-    return [...orders].sort((a, b) => a.createdAt - b.createdAt);
-  }, [orders]);
-  
   if (!isInitialized) {
     return (
         <div className="flex h-dvh w-full flex-col items-center justify-center bg-background">
