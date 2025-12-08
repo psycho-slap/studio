@@ -1,38 +1,15 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Landmark, Plus, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import type { Order, OrderItem, Drink, ModifierGroup, Modifier } from '@/lib/types';
+import type { OrderItem, Drink } from '@/lib/types';
 import { DRINKS } from '@/lib/data';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter
-} from "@/components/ui/dialog"
-import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
-
-type PaymentMethod = 'card' | 'cash';
-
-const playNotificationSound = () => {
-    try {
-        const audio = new Audio('/notification.mp3');
-        audio.play();
-    } catch (error) {
-        console.error("Could not play notification sound:", error);
-    }
-}
 
 const DrinkCategories = DRINKS.reduce((acc, drink) => {
     if (!acc[drink.category]) {
@@ -44,104 +21,52 @@ const DrinkCategories = DRINKS.reduce((acc, drink) => {
 
 
 export default function AddOrderPage() {
+  const router = useRouter();
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loyaltyPhoneNumber, setLoyaltyPhoneNumber] = useState('');
   
-  // Payment Dialog State
-  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
-  const [cashReceived, setCashReceived] = useState<number | null>(null);
+  useEffect(() => {
+    // Load current order from localStorage
+    try {
+        const savedOrder = localStorage.getItem('currentOrder');
+        if (savedOrder) {
+            setOrderItems(JSON.parse(savedOrder));
+        }
+        const savedPhone = localStorage.getItem('currentOrderPhone');
+        if (savedPhone) {
+            setLoyaltyPhoneNumber(savedPhone);
+        }
+    } catch (error) {
+        console.error("Failed to load current order from localStorage", error);
+    }
+  }, []);
 
-  // Modifier Dialog State
-  const [isModifierDialogOpen, setIsModifierDialogOpen] = useState(false);
-  const [selectedDrink, setSelectedDrink] = useState<Drink | null>(null);
-  const [currentModifiers, setCurrentModifiers] = useState<Record<string, Set<string>>>({});
+  useEffect(() => {
+    try {
+        localStorage.setItem('currentOrder', JSON.stringify(orderItems));
+    } catch (error) {
+        console.error("Failed to save current order to localStorage", error);
+    }
+  }, [orderItems]);
+
+  useEffect(() => {
+    try {
+        localStorage.setItem('currentOrderPhone', loyaltyPhoneNumber);
+    } catch (error) {
+        console.error("Failed to save phone number to localStorage", error);
+    }
+  }, [loyaltyPhoneNumber]);
 
 
   const totalPrice = useMemo(() => {
     return orderItems.reduce((total, item) => total + item.finalPrice, 0);
   }, [orderItems]);
 
-  const change = useMemo(() => {
-    if (paymentMethod === 'cash' && cashReceived !== null && cashReceived >= totalPrice) {
-      return cashReceived - totalPrice;
-    }
-    return null;
-  }, [paymentMethod, cashReceived, totalPrice]);
 
   const handleDrinkSelect = (drink: Drink) => {
-    setSelectedDrink(drink);
-    
-    const defaultModifiers: Record<string, Set<string>> = {};
-    drink.modifiers.forEach(group => {
-      if(group.items.length > 0) {
-        if (group.type === 'single') {
-            defaultModifiers[group.id] = new Set([group.items[0].id]);
-        } else {
-            defaultModifiers[group.id] = new Set();
-        }
-      }
-    });
-    setCurrentModifiers(defaultModifiers);
-
-    setIsModifierDialogOpen(true);
+    router.push(`/add-order/modifiers?drinkId=${drink.id}`);
   };
   
-  const handleAddDrinkToOrder = () => {
-      if (!selectedDrink) return;
-
-      let finalPrice = selectedDrink.price;
-      const customizations: string[] = [];
-
-      Object.entries(currentModifiers).forEach(([groupId, modifierIds]) => {
-          const group = selectedDrink.modifiers.find(g => g.id === groupId);
-          if (!group) return;
-
-          modifierIds.forEach(modifierId => {
-             const modifier = group.items.find(i => i.id === modifierId);
-              if (modifier && modifier.price > 0) {
-                  finalPrice += modifier.price;
-                  customizations.push(modifier.name);
-              } else if (modifier && group.type === 'single' && group.items[0].id !== modifier.id) {
-                  customizations.push(modifier.name)
-              } else if (modifier && group.type === 'multiple') {
-                  customizations.push(modifier.name);
-              }
-          })
-      })
-
-      const newItem: OrderItem = {
-          id: `${selectedDrink.id}-${Date.now()}`,
-          name: selectedDrink.name,
-          price: selectedDrink.price,
-          customizations: customizations.join(', '),
-          finalPrice: finalPrice,
-      };
-
-      setOrderItems(prev => [...prev, newItem]);
-      setIsModifierDialogOpen(false);
-      setSelectedDrink(null);
-      setCurrentModifiers({});
-  }
-
-  const handleModifierChange = (groupId: string, modifierId: string, groupType: 'single' | 'multiple') => {
-      setCurrentModifiers(prev => {
-          const newModifiers = { ...prev };
-          if (groupType === 'single') {
-              newModifiers[groupId] = new Set([modifierId]);
-          } else {
-              const currentSet = new Set(newModifiers[groupId] || []);
-              if (currentSet.has(modifierId)) {
-                  currentSet.delete(modifierId);
-              } else {
-                  currentSet.add(modifierId);
-              }
-              newModifiers[groupId] = currentSet;
-          }
-          return newModifiers;
-      })
-  }
-
   const handleRemoveItem = (itemId: string) => {
     setOrderItems(prev => prev.filter((item) => item.id !== itemId));
   }
@@ -149,32 +74,12 @@ export default function AddOrderPage() {
   const resetOrder = () => {
     setOrderItems([]);
     setLoyaltyPhoneNumber('');
-    setPaymentMethod('card');
-    setCashReceived(null);
-    setIsPaymentDialogOpen(false);
+    localStorage.removeItem('currentOrder');
+    localStorage.removeItem('currentOrderPhone');
   }
-
-  const handleFinalizeOrder = () => {
-    const newOrder: Order = {
-        id: `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        customerName: loyaltyPhoneNumber ? `Loyalty: ${loyaltyPhoneNumber}` : 'Гость',
-        items: orderItems,
-        status: 'готовится',
-        createdAt: Date.now(),
-        totalPrice: totalPrice,
-        paymentMethod: paymentMethod,
-    };
-
-    try {
-        const existingOrders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]');
-        const updatedOrders = [...existingOrders, newOrder];
-        localStorage.setItem('orders', JSON.stringify(updatedOrders));
-        
-        playNotificationSound();
-        resetOrder();
-    } catch (error) {
-        console.error("Failed to save order to localStorage:", error);
-    }
+  
+  const handleGoToPayment = () => {
+      router.push('/add-order/payment');
   }
 
   return (
@@ -235,7 +140,7 @@ export default function AddOrderPage() {
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="font-semibold">{item.name}</p>
-                                    <p className="text-xs text-muted-foreground">{item.customizations}</p>
+                                    {item.customizations && <p className="text-xs text-muted-foreground">{item.customizations}</p>}
                                 </div>
                                 <div className="text-right">
                                     <p className="font-semibold">{item.finalPrice} руб.</p>
@@ -262,7 +167,7 @@ export default function AddOrderPage() {
                     <span>Итого:</span>
                     <span>{totalPrice} руб.</span>
                 </div>
-                <Button size="lg" className="w-full" onClick={() => setIsPaymentDialogOpen(true)} disabled={orderItems.length === 0}>
+                <Button size="lg" className="w-full" onClick={handleGoToPayment} disabled={orderItems.length === 0}>
                     К оплате
                 </Button>
                  <Button variant="ghost" size="sm" className="w-full text-destructive" onClick={resetOrder}>
@@ -270,131 +175,6 @@ export default function AddOrderPage() {
                 </Button>
             </div>
         </div>
-
-        {/* Modifier Dialog */}
-        <Dialog open={isModifierDialogOpen} onOpenChange={setIsModifierDialogOpen}>
-            <DialogContent className="max-h-[90dvh] flex flex-col">
-                <DialogHeader>
-                <DialogTitle>Настроить «{selectedDrink?.name}»</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 min-h-0">
-                    <ScrollArea className="h-full">
-                        <div className="space-y-6 pr-6">
-                            {selectedDrink?.modifiers.map(group => (
-                                <div key={group.id}>
-                                    <Label className="text-base font-semibold">{group.name}</Label>
-                                    {group.type === 'single' ? (
-                                        <RadioGroup 
-                                            value={Array.from(currentModifiers[group.id] || [])[0]}
-                                            onValueChange={(value) => handleModifierChange(group.id, value, group.type)}
-                                            className="mt-2 space-y-2"
-                                        >
-                                            {group.items.map(item => (
-                                                <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
-                                                    <Label htmlFor={`radio-${item.id}`} className="flex items-center gap-3 cursor-pointer w-full">
-                                                        <RadioGroupItem value={item.id} id={`radio-${item.id}`} />
-                                                        {item.name}
-                                                    </Label>
-                                                    {item.price > 0 && <Badge variant="secondary">+{item.price} руб.</Badge>}
-                                                </div>
-                                            ))}
-                                        </RadioGroup>
-                                    ) : (
-                                        <div className="mt-2 space-y-2">
-                                        {group.items.map(item => (
-                                            <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
-                                                <Label htmlFor={`check-${item.id}`} className="flex items-center gap-3 cursor-pointer w-full">
-                                                    <Checkbox
-                                                        id={`check-${item.id}`}
-                                                        checked={currentModifiers[group.id]?.has(item.id)}
-                                                        onCheckedChange={() => handleModifierChange(group.id, item.id, group.type)}
-                                                    />
-                                                    {item.name}
-                                                </Label>
-                                                {item.price > 0 && <Badge variant="secondary">+{item.price} руб.</Badge>}
-                                            </div>
-                                        ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </ScrollArea>
-                </div>
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => setIsModifierDialogOpen(false)}>Отмена</Button>
-                    <Button onClick={handleAddDrinkToOrder}>
-                        <Plus className="mr-2"/> Добавить в заказ
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
-        {/* Payment Dialog */}
-        <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
-            <DialogContent className="max-h-[90dvh] flex flex-col">
-                <DialogHeader>
-                    <DialogTitle>Оплата заказа</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 space-y-4">
-                    <Card>
-                        <CardContent className="p-4 space-y-2">
-                             <h3 className="font-semibold">Чек</h3>
-                             <ScrollArea className="h-40">
-                                <div className="space-y-1 pr-4">
-                                {orderItems.map(item => (
-                                    <div key={item.id} className="flex justify-between text-sm">
-                                        <span>{item.name}{item.customizations ? ` (${item.customizations})` : ''}</span>
-                                        <span>{item.finalPrice} руб.</span>
-                                    </div>
-                                ))}
-                                </div>
-                             </ScrollArea>
-                             <Separator />
-                             <div className="flex justify-between font-bold text-lg">
-                                 <span>Итого:</span>
-                                 <span>{totalPrice} руб.</span>
-                             </div>
-                        </CardContent>
-                    </Card>
-
-                    <div>
-                        <Label className="mb-2 block">Способ оплаты</Label>
-                        <div className="grid grid-cols-2 gap-2">
-                        <Button type="button" variant={paymentMethod === 'card' ? 'default' : 'secondary'} onClick={() => setPaymentMethod('card')}>
-                            <CreditCard /> Карта
-                        </Button>
-                        <Button type="button" variant={paymentMethod === 'cash' ? 'default' : 'secondary'} onClick={() => setPaymentMethod('cash')}>
-                            <Landmark /> Наличные
-                        </Button>
-                        </div>
-                    </div>
-
-                    {paymentMethod === 'cash' && (
-                        <div>
-                            <Label htmlFor="cash-received">Принято наличными</Label>
-                            <Input
-                                id="cash-received"
-                                type="number"
-                                placeholder="Например, 500"
-                                value={cashReceived ?? ''}
-                                onChange={(e) => setCashReceived(e.target.value ? Number(e.target.value) : null)}
-                            />
-                            {change !== null && (
-                                <p className="mt-2 text-lg font-semibold text-primary">Сдача: {change} руб.</p>
-                            )}
-                        </div>
-                    )}
-                </div>
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => setIsPaymentDialogOpen(false)}>Назад</Button>
-                    <Button size="lg" onClick={handleFinalizeOrder} disabled={paymentMethod === 'cash' && (cashReceived === null || cashReceived < totalPrice)}>
-                        Оплатить
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
       </main>
     </div>
   );
