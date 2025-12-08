@@ -9,7 +9,6 @@ import {
 import { Badge } from '@/components/ui/badge';
 import type { Order } from '@/lib/types';
 import { DRINKS } from '@/lib/data';
-import { Coffee } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 
@@ -36,8 +35,8 @@ export default function OrderCard({ order, onStatusChange, isCompletedView = fal
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div>
-            <CardTitle className="text-lg flex items-center gap-2 font-headline">
-              <Coffee className="h-5 w-5 text-primary" /> {drink?.name || 'Неизвестный напиток'}
+            <CardTitle className="text-lg font-headline">
+              {drink?.name || 'Неизвестный напиток'}
             </CardTitle>
             <CardDescription>Для: {order.customerName}</CardDescription>
           </div>

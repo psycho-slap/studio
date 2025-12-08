@@ -6,7 +6,6 @@ import { INITIAL_ORDERS } from '@/lib/data';
 import AppHeader from '@/components/app/header';
 import OrderCard from '@/components/app/order-card';
 import { useToast } from '@/hooks/use-toast';
-import { Coffee } from 'lucide-react';
 
 export default function Home() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -81,9 +80,8 @@ export default function Home() {
     return (
         <div className="flex h-dvh w-full flex-col items-center justify-center bg-background">
             <div className="flex items-center gap-3">
-                <Coffee className="h-10 w-10 animate-pulse text-primary" />
-                <h1 className="text-3xl font-bold tracking-tight text-primary font-headline">
-                БаристаТрек
+                <h1 className="text-3xl font-bold tracking-tight text-primary font-headline animate-pulse">
+                Трекер
                 </h1>
             </div>
             <p className="mt-4 text-muted-foreground">Загрузка заказов...</p>

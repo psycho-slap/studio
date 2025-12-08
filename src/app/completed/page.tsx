@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { Order } from '@/lib/types';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Coffee, History } from 'lucide-react';
+import { ArrowLeft, History } from 'lucide-react';
 import OrderCard from '@/components/app/order-card';
 
 export default function CompletedOrdersPage() {
@@ -50,7 +50,7 @@ export default function CompletedOrdersPage() {
         return (
             <div className="flex h-dvh w-full flex-col items-center justify-center bg-background">
                 <div className="flex items-center gap-3">
-                    <Coffee className="h-10 w-10 animate-pulse text-primary" />
+                    <History className="h-10 w-10 animate-pulse text-primary" />
                     <h1 className="text-3xl font-bold tracking-tight text-primary font-headline">
                     БаристаТрек
                     </h1>

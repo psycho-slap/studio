@@ -1,4 +1,4 @@
-import { Coffee, PlusCircle, History } from 'lucide-react';
+import { PlusCircle, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -6,9 +6,8 @@ export default function AppHeader() {
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b bg-card px-4 shadow-sm md:px-6">
       <div className="flex items-center gap-3">
-        <Coffee className="h-7 w-7 text-primary" />
         <h1 className="text-2xl font-bold tracking-tight text-primary font-headline">
-          БаристаТрек
+          Трекер
         </h1>
       </div>
       <div className='flex gap-2'>
