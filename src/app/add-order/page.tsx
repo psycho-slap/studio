@@ -1,6 +1,5 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -36,17 +35,18 @@ const orderSchema = z.object({
 
 type OrderFormValues = z.infer<typeof orderSchema>;
 
+const defaultFormValues: OrderFormValues = {
+  customerName: '',
+  customizations: '',
+  drinkId: '',
+};
+
 export default function AddOrderPage() {
-  const router = useRouter();
   const { toast } = useToast();
 
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema),
-    defaultValues: {
-      customerName: '',
-      customizations: '',
-      drinkId: '',
-    },
+    defaultValues: defaultFormValues,
   });
 
   function onSubmit(data: OrderFormValues) {
@@ -71,7 +71,7 @@ export default function AddOrderPage() {
             title: 'Заказ добавлен',
             description: `Заказ для ${data.customerName} был добавлен в очередь.`,
         });
-        router.push('/');
+        form.reset(defaultFormValues);
     } catch (error) {
         console.error("Failed to save order to localStorage:", error);
         toast({
@@ -123,7 +123,7 @@ export default function AddOrderPage() {
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Напиток</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                         <SelectTrigger>
                             <SelectValue placeholder="Выберите напиток" />
@@ -158,9 +158,7 @@ export default function AddOrderPage() {
                 )}
                 />
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="secondary" asChild>
-                    <Link href="/">Отмена</Link>
-                  </Button>
+                  <Button type="button" variant="secondary" onClick={() => form.reset(defaultFormValues)}>Очистить</Button>
                   <Button type="submit">Разместить заказ</Button>
                 </div>
             </form>
