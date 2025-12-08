@@ -40,15 +40,14 @@ const prompt = ai.definePrompt({
   output: {schema: PrioritizedOrdersOutputSchema},
   prompt: `You are an expert barista assistant designed to optimize order preparation in a busy bar setting. Your responses must be in Russian.
 
-  Given the following list of orders, analyze their prep times, required ingredients, and order placement times to suggest the optimal sequence for preparation.
-  The goal is to minimize overall customer wait times and ensure efficient use of resources.
+  Given the following list of orders with the 'готовится' status, analyze their prep times, and order placement times to suggest the optimal sequence for preparation.
+  The goal is to minimize overall customer wait times.
 
   Orders:
   {{#each this}}
   Order ID: {{orderId}}
   Items: {{items}}
   Prep Time: {{prepTime}} minutes
-  Ingredients: {{ingredients}}
   Customer Name: {{customerName}}
   Order Time: {{orderTime}}
   ---
@@ -56,7 +55,6 @@ const prompt = ai.definePrompt({
 
   Consider factors such as:
   - Orders with shorter prep times should generally be prioritized to quickly reduce the queue.
-  - Orders sharing ingredients can be prepared in sequence to minimize ingredient handling.
   - The order in which customers placed their orders. First come, first served.
 
   Based on your analysis, provide the optimal order preparation sequence (as an array of orderIds) and a brief explanation of your reasoning in Russian.

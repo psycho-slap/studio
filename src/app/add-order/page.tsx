@@ -58,13 +58,13 @@ export default function AddOrderPage() {
         customerName: data.customerName,
         drinkId: drinkId,
         customizations: customizations,
-        status: 'pending',
+        status: 'готовится',
         createdAt: Date.now(),
     };
 
     try {
         const existingOrders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]');
-        const updatedOrders = [newOrder, ...existingOrders];
+        const updatedOrders = [...existingOrders, newOrder]; // Append new orders
         localStorage.setItem('orders', JSON.stringify(updatedOrders));
 
         toast({
@@ -88,13 +88,13 @@ export default function AddOrderPage() {
         <div className="flex items-center gap-3">
             <Coffee className="h-7 w-7 text-primary" />
             <h1 className="text-2xl font-bold tracking-tight text-primary font-headline">
-            БаристаТрек
+            БаристаТрек | Касса
             </h1>
         </div>
         <Button variant="outline" asChild>
           <Link href="/">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Назад к доске
+            Назад к трекеру
           </Link>
         </Button>
       </header>

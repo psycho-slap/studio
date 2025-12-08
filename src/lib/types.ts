@@ -1,4 +1,4 @@
-export type OrderStatus = 'pending' | 'in-progress' | 'ready';
+export type OrderStatus = 'готовится' | 'завершен';
 
 export interface Drink {
   id: string;

@@ -17,7 +17,7 @@ export const INITIAL_ORDERS: Order[] = [
     customerName: 'Алиса',
     drinkId: 'cappuccino',
     customizations: 'Дополнительная пена, овсяное молоко',
-    status: 'pending',
+    status: 'готовится',
     createdAt: Date.now() - 300000,
   },
   {
@@ -25,7 +25,7 @@ export const INITIAL_ORDERS: Order[] = [
     customerName: 'Борис',
     drinkId: 'latte',
     customizations: 'С карамельным сиропом',
-    status: 'pending',
+    status: 'готовится',
     createdAt: Date.now() - 240000,
   },
   {
@@ -33,7 +33,7 @@ export const INITIAL_ORDERS: Order[] = [
     customerName: 'Карл',
     drinkId: 'espresso',
     customizations: 'Двойной шот',
-    status: 'in-progress',
+    status: 'готовится',
     createdAt: Date.now() - 180000,
   },
   {
@@ -41,7 +41,7 @@ export const INITIAL_ORDERS: Order[] = [
     customerName: 'Диана',
     drinkId: 'americano',
     customizations: '',
-    status: 'ready',
+    status: 'завершен',
     createdAt: Date.now() - 120000,
   },
     {
@@ -49,7 +49,7 @@ export const INITIAL_ORDERS: Order[] = [
     customerName: 'Ева',
     drinkId: 'mocha',
     customizations: 'Без взбитых сливок',
-    status: 'pending',
+    status: 'готовится',
     createdAt: Date.now() - 60000,
   },
 ];

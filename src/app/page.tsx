@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import type { Order, OrderStatus } from '@/lib/types';
-import { INITIAL_ORDERS, DRINKS } from '@/lib/data';
+import type { Order } from '@/lib/types';
+import { INITIAL_ORDERS } from '@/lib/data';
 import AppHeader from '@/components/app/header';
-import OrderBoard from '@/components/app/order-board';
+import OrderCard from '@/components/app/order-card';
 import { useToast } from '@/hooks/use-toast';
-import { prioritizeOrders } from '@/ai/ai-priority-reordering';
-import { type Order as AiOrder } from '@/ai/ai-priority-reordering';
 import { Coffee } from 'lucide-react';
 
 export default function Home() {
@@ -15,36 +13,41 @@ export default function Home() {
   const { toast } = useToast();
   const [isInitialized, setIsInitialized] = useState(false);
 
+  const updateOrders = useCallback((newOrders: Order[]) => {
+    try {
+      // Sort by creation time to ensure chronological order
+      const sortedOrders = newOrders.sort((a, b) => a.createdAt - b.createdAt);
+      setOrders(sortedOrders);
+      localStorage.setItem('orders', JSON.stringify(sortedOrders));
+    } catch (error) {
+      console.error("Could not save orders to localStorage:", error);
+    }
+  }, []);
+
   useEffect(() => {
     // This effect runs once on the client to initialize orders from localStorage
     const initializeOrders = () => {
       try {
         const storedOrders = localStorage.getItem('orders');
-        if (storedOrders) {
-          setOrders(JSON.parse(storedOrders));
-        } else {
-          // If nothing in localStorage, use initial data and set it
-          const initialData = INITIAL_ORDERS;
-          setOrders(initialData);
-          localStorage.setItem('orders', JSON.stringify(initialData));
-        }
+        const initialData = storedOrders ? JSON.parse(storedOrders) : INITIAL_ORDERS;
+        updateOrders(initialData);
       } catch (error) {
-        // If parsing fails, fall back to initial orders
         console.error("Could not parse orders from localStorage:", error);
-        setOrders(INITIAL_ORDERS);
+        updateOrders(INITIAL_ORDERS);
       }
       setIsInitialized(true);
     };
 
     initializeOrders();
-  }, []);
+  }, [updateOrders]);
 
   useEffect(() => {
     // This effect handles cross-tab synchronization
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'orders' && event.newValue) {
         try {
-          setOrders(JSON.parse(event.newValue));
+          const newOrders = JSON.parse(event.newValue);
+          updateOrders(newOrders);
         } catch (error) {
           console.error("Could not parse orders from storage event:", error);
         }
@@ -56,90 +59,23 @@ export default function Home() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
+  }, [updateOrders]);
 
-  useEffect(() => {
-    // This effect syncs changes back to localStorage whenever orders state changes,
-    // but only after initialization to avoid overwriting on first load.
-    if (isInitialized) {
-      try {
-        localStorage.setItem('orders', JSON.stringify(orders));
-      } catch (error) {
-        console.error("Could not save orders to localStorage:", error);
-      }
-    }
-  }, [orders, isInitialized]);
-
-
-  const updateOrderStatus = useCallback((orderId: string, status: OrderStatus) => {
-    setOrders(prev =>
-      prev.map(order => (order.id === orderId ? { ...order, status } : order))
-    );
-  }, []);
 
   const completeOrder = useCallback((orderId: string) => {
-    const order = orders.find(o => o.id === orderId);
-    setOrders(prev => prev.filter(o => o.id !== orderId));
-     toast({
+    const orderToComplete = orders.find(o => o.id === orderId);
+    if (!orderToComplete) return;
+
+    const updatedOrders = orders.map(order => 
+        order.id === orderId ? { ...order, status: 'завершен' as const } : order
+    );
+    updateOrders(updatedOrders);
+     
+    toast({
       title: 'Заказ выполнен',
-      description: `${order?.customerName || 'Заказ'} был подан и удален.`,
+      description: `${orderToComplete.customerName || 'Заказ'} был отмечен как завершенный.`,
     });
-  }, [toast, orders]);
-
-  const optimizeQueue = useCallback(async () => {
-    const pendingOrders = orders.filter(o => o.status === 'pending');
-    
-    if (pendingOrders.length < 2) {
-      toast({
-        title: 'Нечего оптимизировать',
-        description: 'Нужно как минимум два заказа в очереди для оптимизации.',
-      });
-      return;
-    }
-
-    const otherOrders = orders.filter(o => o.status !== 'pending');
-    
-    const drinksMap = new Map(DRINKS.map(d => [d.id, d]));
-
-    const aiOrders: AiOrder[] = pendingOrders.map(order => ({
-      orderId: order.id,
-      items: [drinksMap.get(order.drinkId)?.name || 'Неизвестный напиток'],
-      prepTime: drinksMap.get(order.drinkId)?.prepTime || 5,
-      ingredients: [], // This can be enhanced if ingredient data is available
-      customerName: order.customerName,
-      orderTime: new Date(order.createdAt).toISOString(),
-    }));
-
-    try {
-      toast({
-        title: 'Оптимизация...',
-        description: 'ИИ анализирует очередь для лучшей последовательности...',
-      });
-      const { prioritizedOrderIds, reasoning } = await prioritizeOrders(aiOrders);
-      
-      const prioritizedMap = new Map(prioritizedOrderIds.map((id, index) => [id, index]));
-      
-      const sortedPending = [...pendingOrders].sort((a, b) => {
-        const aPrio = prioritizedMap.get(a.id) ?? Infinity;
-        const bPrio = prioritizedMap.get(b.id) ?? Infinity;
-        return aPrio - bPrio;
-      });
-
-      setOrders([...sortedPending, ...otherOrders]);
-
-      toast({
-        title: 'Очередь оптимизирована!',
-        description: reasoning,
-      });
-    } catch (error) {
-      console.error("Failed to optimize queue:", error);
-      toast({
-        variant: "destructive",
-        title: "Ошибка оптимизации",
-        description: "Не удалось оптимизировать очередь. Пожалуйста, попробуйте еще раз.",
-      });
-    }
-  }, [orders, toast]);
+  }, [orders, toast, updateOrders]);
   
   if (!isInitialized) {
     return (
@@ -155,16 +91,30 @@ export default function Home() {
     );
   }
 
+  const preparingOrders = orders.filter(o => o.status === 'готовится');
+
   return (
     <div className="flex h-dvh w-full flex-col bg-background font-body text-foreground">
       <AppHeader />
-      <main className="flex-1 overflow-x-auto p-4 md:p-6">
-        <OrderBoard
-          orders={orders}
-          updateOrderStatus={updateOrderStatus}
-          completeOrder={completeOrder}
-          optimizeQueue={optimizeQueue}
-        />
+      <main className="flex-1 overflow-y-auto p-4 md:p-6">
+        <div className="mx-auto max-w-6xl">
+            <h2 className="text-2xl font-bold font-headline mb-4">Активные заказы ({preparingOrders.length})</h2>
+            {preparingOrders.length > 0 ? (
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {preparingOrders.map(order => (
+                        <OrderCard
+                            key={order.id}
+                            order={order}
+                            onStatusChange={() => completeOrder(order.id)}
+                        />
+                    ))}
+                </div>
+            ) : (
+                <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed border-border mt-4">
+                    <p className="text-lg text-muted-foreground">Нет активных заказов.</p>
+                </div>
+            )}
+        </div>
       </main>
     </div>
   );

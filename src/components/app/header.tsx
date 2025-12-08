@@ -1,4 +1,4 @@
-import { Coffee, PlusCircle } from 'lucide-react';
+import { Coffee, PlusCircle, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -11,12 +11,20 @@ export default function AppHeader() {
           БаристаТрек
         </h1>
       </div>
-      <Button asChild>
-        <Link href="/add-order">
-          <PlusCircle className="mr-2 h-4 w-4" />
-          Добавить заказ
-        </Link>
-      </Button>
+      <div className='flex gap-2'>
+        <Button asChild>
+          <Link href="/add-order">
+            <PlusCircle className="mr-2 h-4 w-4" />
+            Касса
+          </Link>
+        </Button>
+        <Button variant="outline" asChild>
+            <Link href="/completed">
+                <History className="mr-2 h-4 w-4" />
+                Завершенные
+            </Link>
+        </Button>
+      </div>
     </header>
   );
 }
