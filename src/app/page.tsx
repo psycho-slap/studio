@@ -21,15 +21,16 @@ export default function Home() {
       console.error("Could not save orders to localStorage:", error);
     }
   }, []);
-
+  
   useEffect(() => {
     const initializeOrders = () => {
       try {
         const storedOrders = localStorage.getItem('orders');
         const initialData = storedOrders ? JSON.parse(storedOrders) : INITIAL_ORDERS;
-        setOrders(initialData.sort((a: Order, b: Order) => a.createdAt - b.createdAt));
+        const currentOrders = initialData.sort((a: Order, b: Order) => a.createdAt - b.createdAt);
+        setOrders(currentOrders);
         if (!storedOrders) {
-            localStorage.setItem('orders', JSON.stringify(initialData));
+            localStorage.setItem('orders', JSON.stringify(currentOrders));
         }
       } catch (error) {
         console.error("Could not parse orders from localStorage:", error);
@@ -46,7 +47,7 @@ export default function Home() {
       if (event.key === 'orders' && event.newValue) {
         try {
           const newOrders = JSON.parse(event.newValue);
-          updateOrders(newOrders);
+          setOrders(newOrders.sort((a: Order, b: Order) => a.createdAt - b.createdAt));
         } catch (error) {
           console.error("Could not parse orders from storage event:", error);
         }
@@ -58,7 +59,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [updateOrders]);
+  }, []);
 
 
   const completeOrder = useCallback((orderId: string) => {
