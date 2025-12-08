@@ -4,9 +4,9 @@ import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { ArrowLeft, Trash2, Plus, CreditCard, Landmark, X } from 'lucide-react';
+import { ArrowLeft, Trash2, Plus, CreditCard, Landmark, X, Users, UserRoundX } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { Order, OrderItem, Drink } from '@/lib/types';
+import type { Order, OrderItem, Drink, Customer } from '@/lib/types';
 import { DRINKS } from '@/lib/data';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -22,6 +22,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useCollection, useFirestore, useUser } from '@/firebase';
+import { collection } from 'firebase/firestore';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Check as CheckIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const playNotificationSound = () => {
   try {
@@ -45,7 +51,7 @@ type PaymentMethod = 'card' | 'cash';
 
 export default function AddOrderPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-  const [loyaltyPhoneNumber, setLoyaltyPhoneNumber] = useState('');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   
   // State for modifiers dialog
   const [isModifierOpen, setIsModifierOpen] = useState(false);
@@ -56,6 +62,19 @@ export default function AddOrderPage() {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [cashReceived, setCashReceived] = useState<number | null>(null);
+  
+  // State for customer selection popover
+  const [isCustomerPopoverOpen, setIsCustomerPopoverOpen] = useState(false);
+
+  // Firebase hooks
+  const firestore = useFirestore();
+  const { user } = useUser();
+  const customersRef = useMemo(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'customers');
+  }, [firestore, user]);
+  const { data: customers } = useCollection<Customer>(customersRef);
+
 
   useEffect(() => {
     try {
@@ -63,9 +82,9 @@ export default function AddOrderPage() {
       if (savedOrder) {
         setOrderItems(JSON.parse(savedOrder));
       }
-      const savedPhone = localStorage.getItem('currentOrderPhone');
-      if (savedPhone) {
-        setLoyaltyPhoneNumber(savedPhone);
+      const savedCustomer = localStorage.getItem('currentOrderCustomer');
+      if (savedCustomer) {
+        setSelectedCustomer(JSON.parse(savedCustomer));
       }
     } catch (error) {
       console.error("Failed to load state from localStorage", error);
@@ -82,11 +101,15 @@ export default function AddOrderPage() {
 
   useEffect(() => {
     try {
-      localStorage.setItem('currentOrderPhone', loyaltyPhoneNumber);
+      if (selectedCustomer) {
+        localStorage.setItem('currentOrderCustomer', JSON.stringify(selectedCustomer));
+      } else {
+        localStorage.removeItem('currentOrderCustomer');
+      }
     } catch (error) {
-      console.error("Failed to save phone to localStorage", error);
+      console.error("Failed to save customer to localStorage", error);
     }
-  }, [loyaltyPhoneNumber]);
+  }, [selectedCustomer]);
 
 
   const totalPrice = useMemo(() => {
@@ -147,7 +170,7 @@ export default function AddOrderPage() {
             const modifier = group.items.find(i => i.id === modifierId);
             if (modifier) {
                 finalPrice += modifier.price;
-                 if (group.type === 'multiple' || (group.type === 'single' && modifier.id !== group.items[0].id)) {
+                 if ((group.type === 'multiple' && modifier.price > 0) || (group.type === 'single' && modifier.id !== group.items[0].id) || (group.type === 'multiple' && modifier.price === 0)) {
                     customizations.push(modifier.name);
                 }
             }
@@ -173,15 +196,16 @@ export default function AddOrderPage() {
 
   const resetOrder = () => {
     setOrderItems([]);
-    setLoyaltyPhoneNumber('');
+    setSelectedCustomer(null);
     localStorage.removeItem('currentOrder');
-    localStorage.removeItem('currentOrderPhone');
+    localStorage.removeItem('currentOrderCustomer');
   }
 
   const handleFinalizeOrder = () => {
     const newOrder: Order = {
         id: `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        customerName: loyaltyPhoneNumber ? `Loyalty: ${loyaltyPhoneNumber}` : 'Гость',
+        customerName: selectedCustomer ? selectedCustomer.name : 'Гость',
+        customerId: selectedCustomer ? selectedCustomer.id : undefined,
         items: orderItems,
         status: 'готовится',
         createdAt: Date.now(),
@@ -245,12 +269,57 @@ export default function AddOrderPage() {
         <div className="flex flex-col border-l bg-card p-4 md:p-6">
            <div className="flex-1 overflow-y-auto">
              <h2 className="text-2xl font-bold font-headline mb-1">Текущий заказ</h2>
-             <Input 
-                placeholder="Номер телефона (лояльность)"
-                value={loyaltyPhoneNumber}
-                onChange={(e) => setLoyaltyPhoneNumber(e.target.value)}
-                className="mb-4 mt-2"
-              />
+             
+             <div className="mt-4 mb-4">
+                <Label className="mb-2 block text-sm font-medium">Клиент</Label>
+                <div className="flex items-center gap-2">
+                    <Popover open={isCustomerPopoverOpen} onOpenChange={setIsCustomerPopoverOpen}>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" className="w-full justify-start">
+                                <Users className="mr-2 h-4 w-4"/>
+                                {selectedCustomer ? selectedCustomer.name : 'Выберите клиента'}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[300px] p-0" align="start">
+                            <Command>
+                                <CommandInput placeholder="Найти клиента..." />
+                                <CommandList>
+                                    <CommandEmpty>Клиенты не найдены.</CommandEmpty>
+                                    <CommandGroup>
+                                        {customers?.map((customer) => (
+                                        <CommandItem
+                                            key={customer.id}
+                                            value={customer.name}
+                                            onSelect={() => {
+                                                setSelectedCustomer(customer);
+                                                setIsCustomerPopoverOpen(false);
+                                            }}
+                                        >
+                                           <CheckIcon
+                                            className={cn(
+                                                "mr-2 h-4 w-4",
+                                                selectedCustomer?.id === customer.id ? "opacity-100" : "opacity-0"
+                                            )}
+                                            />
+                                            {customer.name} ({customer.phoneNumber})
+                                        </CommandItem>
+                                        ))}
+                                    </CommandGroup>
+                                </CommandList>
+                            </Command>
+                        </PopoverContent>
+                    </Popover>
+                    {selectedCustomer && (
+                        <Button variant="ghost" size="icon" onClick={() => setSelectedCustomer(null)}>
+                            <UserRoundX className="h-4 w-4 text-destructive"/>
+                        </Button>
+                    )}
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                   Для гостя без карты лояльности оставьте поле пустым.
+                </p>
+             </div>
+
 
             {orderItems.length > 0 ? (
                 <div className="space-y-3">

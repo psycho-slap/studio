@@ -2,13 +2,23 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import type { Order } from '@/lib/types';
-import { INITIAL_ORDERS } from '@/lib/data';
 import AppHeader from '@/components/app/header';
 import OrderCard from '@/components/app/order-card';
+import { useUser, useAuth } from '@/firebase';
+import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { Loader2 } from 'lucide-react';
 
 export default function Home() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isInitialized, setIsInitialized] = useState(false);
+  const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [isUserLoading, user, auth]);
 
   const updateOrders = useCallback((newOrders: Order[]) => {
     try {
@@ -24,15 +34,16 @@ export default function Home() {
     const initializeOrders = () => {
       try {
         const storedOrders = localStorage.getItem('orders');
-        const initialData = storedOrders ? JSON.parse(storedOrders) : INITIAL_ORDERS;
-        const currentOrders = initialData.sort((a: Order, b: Order) => a.createdAt - b.createdAt);
-        setOrders(currentOrders);
-        if (!storedOrders) {
-            localStorage.setItem('orders', JSON.stringify(currentOrders));
+        if (storedOrders) {
+          const initialData = JSON.parse(storedOrders);
+          const currentOrders = initialData.sort((a: Order, b: Order) => a.createdAt - b.createdAt);
+          setOrders(currentOrders);
+        } else {
+           localStorage.setItem('orders', JSON.stringify([]));
         }
       } catch (error) {
         console.error("Could not parse orders from localStorage:", error);
-        setOrders(INITIAL_ORDERS);
+        setOrders([]);
       }
       setIsInitialized(true);
     };
@@ -70,15 +81,16 @@ export default function Home() {
     updateOrders(updatedOrders);
   }, [orders, updateOrders]);
   
-  if (!isInitialized) {
+  if (!isInitialized || isUserLoading) {
     return (
         <div className="flex h-dvh w-full flex-col items-center justify-center bg-background">
             <div className="flex items-center gap-3">
-                <h1 className="text-3xl font-bold tracking-tight text-primary font-headline animate-pulse">
+                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <h1 className="text-3xl font-bold tracking-tight text-primary font-headline">
                 Трекер
                 </h1>
             </div>
-            <p className="mt-4 text-muted-foreground">Загрузка заказов...</p>
+            <p className="mt-4 text-muted-foreground">Загрузка заказов и авторизация...</p>
         </div>
     );
   }

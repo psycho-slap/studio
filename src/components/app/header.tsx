@@ -1,4 +1,4 @@
-import { PlusCircle, History } from 'lucide-react';
+import { PlusCircle, History, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
@@ -11,6 +11,12 @@ export default function AppHeader() {
         </h1>
       </div>
       <div className='flex gap-2'>
+        <Button variant="secondary" asChild>
+          <Link href="/customers">
+            <Users className="mr-2 h-4 w-4" />
+            Клиенты
+          </Link>
+        </Button>
         <Button asChild>
           <Link href="/add-order">
             <PlusCircle className="mr-2 h-4 w-4" />

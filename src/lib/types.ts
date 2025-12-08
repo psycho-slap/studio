@@ -33,10 +33,18 @@ export interface OrderItem {
 
 export interface Order {
   id: string;
-  customerName: string;
+  customerName: string; // Can be "Гость" or the customer's name
+  customerId?: string; // Optional customer ID from Firestore
   items: OrderItem[];
   status: OrderStatus;
   createdAt: number;
   totalPrice: number;
   paymentMethod: PaymentMethod;
+}
+
+export interface Customer {
+  id: string;
+  name: string;
+  phoneNumber: string;
+  notes?: string;
 }
