@@ -146,6 +146,7 @@ export default function AddOrderPage() {
 
     const newItem: OrderItem = {
         id: `${selectedDrink.id}-${Date.now()}`,
+        drinkId: selectedDrink.id,
         name: selectedDrink.name,
         price: selectedDrink.price,
         customizations: customizations.join(', '),
@@ -178,6 +179,12 @@ export default function AddOrderPage() {
         return;
     }
 
+    const estimatedPrepTime = orderItems.reduce((total, item) => {
+        const drink = DRINKS.find(d => d.id === item.drinkId);
+        return total + (drink ? drink.prepTime * 60 : 0); // convert minutes to seconds
+    }, 0);
+
+
     const orderId = `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newOrder: Order = {
         id: orderId,
@@ -187,6 +194,7 @@ export default function AddOrderPage() {
         createdAt: Date.now(),
         totalPrice: totalPrice,
         paymentMethod: paymentMethod,
+        estimatedPrepTime: estimatedPrepTime,
     };
     
     if (selectedCustomer) {
@@ -197,7 +205,7 @@ export default function AddOrderPage() {
     
     setDocumentNonBlocking(orderRef, newOrder, {});
 
-    playNotificationSound();
+    // playNotificationSound();
     resetOrder();
     setIsPaymentOpen(false);
   };

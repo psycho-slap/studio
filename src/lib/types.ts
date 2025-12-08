@@ -27,6 +27,7 @@ export interface Drink {
 
 export interface OrderItem {
     id: string; // unique item id in one order
+    drinkId: string;
     name: string;
     price: number;
     customizations: string; // e.g., "Oat Milk, Vanilla"
@@ -40,8 +41,10 @@ export interface Order {
   items: OrderItem[];
   status: OrderStatus;
   createdAt: number; // Using number (timestamp) for simplicity across client/server
+  completedAt?: number; // Timestamp when the order was completed
   totalPrice: number;
   paymentMethod: PaymentMethod;
+  estimatedPrepTime: number; // in seconds
 }
 
 export interface Customer {

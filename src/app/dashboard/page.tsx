@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import type { Order } from '@/lib/types';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, DollarSign, ShoppingCart, BarChart, Users, LayoutDashboard } from 'lucide-react';
+import { ArrowLeft, Loader2, DollarSign, ShoppingCart, BarChart, Users, LayoutDashboard, Clock } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useAuth } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,11 +46,16 @@ export default function DashboardPage() {
     const { data: orders, isLoading: areOrdersLoading } = useCollection<Order>(ordersQuery);
 
     const stats = useMemo(() => {
-        if (!orders) return { totalRevenue: 0, orderCount: 0, avgCheck: 0 };
+        if (!orders) return { totalRevenue: 0, orderCount: 0, avgCheck: 0, avgPrepTime: 0 };
         const orderCount = orders.length;
         const totalRevenue = orders.reduce((sum, order) => sum + order.totalPrice, 0);
         const avgCheck = orderCount > 0 ? totalRevenue / orderCount : 0;
-        return { totalRevenue, orderCount, avgCheck };
+        
+        const completedOrders = orders.filter(o => o.status === 'завершен' && o.completedAt);
+        const totalPrepTime = completedOrders.reduce((sum, order) => sum + (order.completedAt! - order.createdAt), 0);
+        const avgPrepTime = completedOrders.length > 0 ? (totalPrepTime / completedOrders.length) / 1000 : 0; // in seconds
+
+        return { totalRevenue, orderCount, avgCheck, avgPrepTime };
     }, [orders]);
 
 
@@ -97,7 +102,7 @@ export default function DashboardPage() {
                 <div className="mx-auto max-w-7xl">
                     <h2 className="text-xl font-semibold mb-4">Показатели за сегодня ({format(new Date(), 'dd MMMM yyyy', { locale: ru })})</h2>
                     {/* Stats Cards */}
-                    <div className="grid gap-4 md:grid-cols-3">
+                    <div className="grid gap-4 md:grid-cols-4">
                         <Card>
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                 <CardTitle className="text-sm font-medium">Общая выручка</CardTitle>
@@ -123,6 +128,15 @@ export default function DashboardPage() {
                             </CardHeader>
                             <CardContent>
                                 <div className="text-2xl font-bold">{stats.avgCheck.toFixed(2)} руб.</div>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium">Среднее время готовки</CardTitle>
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold">~ {Math.round(stats.avgPrepTime)} сек.</div>
                             </CardContent>
                         </Card>
                     </div>

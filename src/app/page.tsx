@@ -34,7 +34,7 @@ export default function Home() {
   const completeOrder = useCallback((orderId: string) => {
     if (!firestore) return;
     const orderRef = doc(firestore, 'orders', orderId);
-    updateDocumentNonBlocking(orderRef, { status: 'завершен' });
+    updateDocumentNonBlocking(orderRef, { status: 'завершен', completedAt: Date.now() });
   }, [firestore]);
   
   if (isUserLoading || areOrdersLoading) {
