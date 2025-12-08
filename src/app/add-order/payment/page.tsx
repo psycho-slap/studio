@@ -17,7 +17,7 @@ type PaymentMethod = 'card' | 'cash';
 const playNotificationSound = () => {
     try {
         const audio = new Audio('/notification.mp3');
-        audio.play();
+        audio.play().catch(e => console.error("Error playing notification sound:", e));
     } catch (error) {
         console.error("Could not play notification sound:", error);
     }
@@ -34,11 +34,12 @@ export default function PaymentPage() {
         try {
             const savedOrder = localStorage.getItem('currentOrder');
             const savedPhone = localStorage.getItem('currentOrderPhone');
-            if (savedOrder) {
+            if (savedOrder && savedOrder !== '[]') {
                 setOrderItems(JSON.parse(savedOrder));
             } else {
                 // If no order, redirect
                 router.replace('/add-order');
+                return;
             }
             if (savedPhone) {
                 setLoyaltyPhoneNumber(savedPhone);
@@ -81,8 +82,8 @@ export default function PaymentPage() {
             localStorage.removeItem('currentOrderPhone');
 
             playNotificationSound();
-            router.replace('/add-order');
-        } catch (error) {
+            router.replace('/');
+        } catch (error) => {
             console.error("Failed to save order to localStorage:", error);
         }
     }

@@ -25,8 +25,7 @@ export default function AddOrderPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loyaltyPhoneNumber, setLoyaltyPhoneNumber] = useState('');
   
-  useEffect(() => {
-    // Load current order from localStorage
+  const loadOrderFromStorage = () => {
     try {
         const savedOrder = localStorage.getItem('currentOrder');
         if (savedOrder) {
@@ -39,6 +38,22 @@ export default function AddOrderPage() {
     } catch (error) {
         console.error("Failed to load current order from localStorage", error);
     }
+  };
+
+  useEffect(() => {
+    loadOrderFromStorage();
+
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'currentOrder' || event.key === 'currentOrderPhone') {
+        loadOrderFromStorage();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   useEffect(() => {

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import type { Drink } from '@/lib/types';
 import { DRINKS } from '@/lib/data';
 import { Label } from '@/components/ui/label';
@@ -29,15 +29,17 @@ export default function ModifiersPage() {
             drink.modifiers.forEach(group => {
                 if (group.items.length > 0) {
                     if (group.type === 'single') {
+                        // Set default single selection to the first item
                         defaultModifiers[group.id] = new Set([group.items[0].id]);
                     } else {
+                        // Multiple selection starts empty
                         defaultModifiers[group.id] = new Set();
                     }
                 }
             });
             setCurrentModifiers(defaultModifiers);
         } else {
-            // Handle case where drink is not found
+            // Handle case where drink is not found, redirect back
             router.push('/add-order');
         }
     }, [drinkId, router]);
@@ -45,9 +47,11 @@ export default function ModifiersPage() {
     const handleModifierChange = (groupId: string, modifierId: string, groupType: 'single' | 'multiple') => {
         setCurrentModifiers(prev => {
             const newModifiers = { ...prev };
+            // For single choice, just replace the set with a new one
             if (groupType === 'single') {
                 newModifiers[groupId] = new Set([modifierId]);
             } else {
+                // For multiple choice, add or remove from the set
                 const currentSet = new Set(newModifiers[groupId] || []);
                 if (currentSet.has(modifierId)) {
                     currentSet.delete(modifierId);
@@ -72,13 +76,12 @@ export default function ModifiersPage() {
 
             modifierIds.forEach(modifierId => {
                 const modifier = group.items.find(i => i.id === modifierId);
-                if (modifier && modifier.price > 0) {
+                if (modifier) {
                     finalPrice += modifier.price;
-                    customizations.push(modifier.name);
-                } else if (modifier && group.type === 'single' && group.items[0].id !== modifier.id) {
-                    customizations.push(modifier.name);
-                } else if (modifier && group.type === 'multiple') {
-                    customizations.push(modifier.name);
+                    // Add customization name if it's not the default for single-choice groups or if it's a multiple-choice item
+                     if (group.type === 'multiple' || (group.type === 'single' && modifier.id !== group.items[0].id)) {
+                        customizations.push(modifier.name);
+                    }
                 }
             });
         });
