@@ -1,14 +1,14 @@
 import type { Drink, Order } from './types';
 
 export const DRINKS: Drink[] = [
-  { id: 'espresso', name: 'Эспрессо', prepTime: 2 },
-  { id: 'cappuccino', name: 'Капучино', prepTime: 3 },
-  { id: 'latte', name: 'Латте', prepTime: 4 },
-  { id: 'americano', name: 'Американо', prepTime: 2 },
-  { id: 'mocha', name: 'Мокка', prepTime: 5 },
-  { id: 'flat-white', name: 'Флэт Уайт', prepTime: 3 },
-  { id: 'iced-coffee', name: 'Холодный кофе', prepTime: 3 },
-  { id: 'herbal-tea', name: 'Травяной чай', prepTime: 2 },
+  { id: 'espresso', name: 'Эспрессо', prepTime: 2, price: 150 },
+  { id: 'cappuccino', name: 'Капучино', prepTime: 3, price: 250 },
+  { id: 'latte', name: 'Латте', prepTime: 4, price: 280 },
+  { id: 'americano', name: 'Американо', prepTime: 2, price: 180 },
+  { id: 'mocha', name: 'Мокка', prepTime: 5, price: 320 },
+  { id: 'flat-white', name: 'Флэт Уайт', prepTime: 3, price: 260 },
+  { id: 'iced-coffee', name: 'Холодный кофе', prepTime: 3, price: 220 },
+  { id: 'herbal-tea', name: 'Травяной чай', prepTime: 2, price: 120 },
 ];
 
 export const INITIAL_ORDERS: Order[] = [
@@ -19,6 +19,8 @@ export const INITIAL_ORDERS: Order[] = [
     customizations: 'Дополнительная пена, овсяное молоко',
     status: 'готовится',
     createdAt: Date.now() - 300000,
+    price: 250,
+    paymentMethod: 'card',
   },
   {
     id: `order-2`,
@@ -27,6 +29,8 @@ export const INITIAL_ORDERS: Order[] = [
     customizations: 'С карамельным сиропом',
     status: 'готовится',
     createdAt: Date.now() - 240000,
+    price: 280,
+    paymentMethod: 'cash',
   },
   {
     id: `order-3`,
@@ -35,6 +39,8 @@ export const INITIAL_ORDERS: Order[] = [
     customizations: 'Двойной шот',
     status: 'готовится',
     createdAt: Date.now() - 180000,
+    price: 150,
+    paymentMethod: 'card',
   },
   {
     id: `order-4`,
@@ -43,6 +49,8 @@ export const INITIAL_ORDERS: Order[] = [
     customizations: '',
     status: 'завершен',
     createdAt: Date.now() - 120000,
+    price: 180,
+    paymentMethod: 'card',
   },
     {
     id: `order-5`,
@@ -51,5 +59,7 @@ export const INITIAL_ORDERS: Order[] = [
     customizations: 'Без взбитых сливок',
     status: 'готовится',
     createdAt: Date.now() - 60000,
+    price: 320,
+    paymentMethod: 'cash',
   },
 ];

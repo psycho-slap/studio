@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -25,7 +26,9 @@ import { DRINKS } from '@/lib/data';
 import type { Order } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CreditCard, Landmark } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 const orderSchema = z.object({
   customerName: z.string().min(2, 'Имя должно содержать не менее 2 символов.').max(50, 'Имя слишком длинное.'),
@@ -34,6 +37,7 @@ const orderSchema = z.object({
 });
 
 type OrderFormValues = z.infer<typeof orderSchema>;
+type PaymentMethod = 'card' | 'cash';
 
 const defaultFormValues: OrderFormValues = {
   customerName: '',
@@ -52,23 +56,34 @@ const playNotificationSound = () => {
 
 export default function AddOrderPage() {
   const { toast } = useToast();
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
+  const [totalPrice, setTotalPrice] = useState(0);
 
   const form = useForm<OrderFormValues>({
     resolver: zodResolver(orderSchema),
     defaultValues: defaultFormValues,
   });
 
+  const selectedDrinkId = form.watch('drinkId');
+
+  useState(() => {
+    const drink = DRINKS.find(d => d.id === selectedDrinkId);
+    setTotalPrice(drink?.price || 0);
+  });
+
   function onSubmit(data: OrderFormValues) {
-    const drinkId = data.drinkId;
-    const customizations = data.customizations || '';
-    
+    const drink = DRINKS.find(d => d.id === data.drinkId);
+    if (!drink) return;
+
     const newOrder: Order = {
         id: `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         customerName: data.customerName,
-        drinkId: drinkId,
-        customizations: customizations,
+        drinkId: data.drinkId,
+        customizations: data.customizations || '',
         status: 'готовится',
         createdAt: Date.now(),
+        price: drink.price,
+        paymentMethod: paymentMethod,
     };
 
     try {
@@ -83,6 +98,7 @@ export default function AddOrderPage() {
             description: `Заказ для ${data.customerName} был добавлен в очередь.`,
         });
         form.reset(defaultFormValues);
+        setTotalPrice(0);
     } catch (error) {
         console.error("Failed to save order to localStorage:", error);
         toast({
@@ -109,9 +125,9 @@ export default function AddOrderPage() {
         </Button>
       </header>
       <main className="flex flex-1 items-center justify-center p-4">
-        <div className="w-full max-w-md rounded-lg border bg-card p-6 shadow-sm">
+        <div className="w-full max-w-lg rounded-lg border bg-card p-6 shadow-sm">
             <h2 className="mb-1 text-2xl font-bold font-headline">Новый заказ клиента</h2>
-            <p className="mb-6 text-muted-foreground">Введите детали нового заказа. Нажмите "Разместить", когда закончите.</p>
+            <p className="mb-6 text-muted-foreground">Введите детали заказа и примите оплату.</p>
             <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 <FormField
@@ -133,7 +149,14 @@ export default function AddOrderPage() {
                 render={({ field }) => (
                     <FormItem>
                     <FormLabel>Напиток</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+                    <Select 
+                        onValueChange={(value) => {
+                            field.onChange(value);
+                            const drink = DRINKS.find(d => d.id === value);
+                            setTotalPrice(drink?.price || 0);
+                        }} 
+                        value={field.value}
+                    >
                         <FormControl>
                         <SelectTrigger>
                             <SelectValue placeholder="Выберите напиток" />
@@ -142,7 +165,7 @@ export default function AddOrderPage() {
                         <SelectContent>
                         {DRINKS.map(drink => (
                             <SelectItem key={drink.id} value={drink.id}>
-                            {drink.name}
+                            {drink.name} - {drink.price} руб.
                             </SelectItem>
                         ))}
                         </SelectContent>
@@ -167,9 +190,29 @@ export default function AddOrderPage() {
                     </FormItem>
                 )}
                 />
+
+                <Card className="mt-6">
+                    <CardContent className="p-4">
+                        <div className="flex justify-between items-center mb-4">
+                            <span className="text-lg font-semibold">Итого:</span>
+                            <span className="text-2xl font-bold font-headline">{totalPrice} руб.</span>
+                        </div>
+                        
+                        <FormLabel>Способ оплаты</FormLabel>
+                        <div className="grid grid-cols-2 gap-2 mt-2">
+                           <Button type="button" variant={paymentMethod === 'card' ? 'default' : 'secondary'} onClick={() => setPaymentMethod('card')} className="h-12">
+                             <CreditCard className="mr-2"/> Карта
+                           </Button>
+                           <Button type="button" variant={paymentMethod === 'cash' ? 'default' : 'secondary'} onClick={() => setPaymentMethod('cash')} className="h-12">
+                             <Landmark className="mr-2"/> Наличные
+                           </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <div className="flex justify-end gap-2 pt-4">
-                  <Button type="button" variant="secondary" onClick={() => form.reset(defaultFormValues)}>Очистить</Button>
-                  <Button type="submit">Разместить заказ</Button>
+                  <Button type="button" variant="secondary" onClick={() => {form.reset(defaultFormValues); setTotalPrice(0);}}>Очистить</Button>
+                  <Button type="submit" size="lg" disabled={!selectedDrinkId}>Принять оплату и разместить заказ</Button>
                 </div>
             </form>
             </Form>
