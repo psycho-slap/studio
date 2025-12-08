@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useCollection, useFirestore, useUser, useAuth } from '@/firebase';
+import { useCollection, useFirestore, useUser, useAuth, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -23,7 +23,7 @@ export default function CustomersPage() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
 
-  const customersRef = useMemo(() => {
+  const customersRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'customers');
   }, [firestore, user]);
