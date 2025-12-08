@@ -23,11 +23,13 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useCollection, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Check as CheckIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 const playNotificationSound = () => {
   try {
@@ -69,48 +71,13 @@ export default function AddOrderPage() {
   // Firebase hooks
   const firestore = useFirestore();
   const { user } = useUser();
+  const { toast } = useToast();
+
   const customersRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     return collection(firestore, 'customers');
   }, [firestore, user]);
   const { data: customers } = useCollection<Customer>(customersRef);
-
-
-  useEffect(() => {
-    try {
-      const savedOrder = localStorage.getItem('currentOrder');
-      if (savedOrder) {
-        setOrderItems(JSON.parse(savedOrder));
-      }
-      const savedCustomer = localStorage.getItem('currentOrderCustomer');
-      if (savedCustomer) {
-        setSelectedCustomer(JSON.parse(savedCustomer));
-      }
-    } catch (error) {
-      console.error("Failed to load state from localStorage", error);
-    }
-  }, []);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('currentOrder', JSON.stringify(orderItems));
-    } catch (error) {
-      console.error("Failed to save order to localStorage", error);
-    }
-  }, [orderItems]);
-
-  useEffect(() => {
-    try {
-      if (selectedCustomer) {
-        localStorage.setItem('currentOrderCustomer', JSON.stringify(selectedCustomer));
-      } else {
-        localStorage.removeItem('currentOrderCustomer');
-      }
-    } catch (error) {
-      console.error("Failed to save customer to localStorage", error);
-    }
-  }, [selectedCustomer]);
-
 
   const totalPrice = useMemo(() => {
     return orderItems.reduce((total, item) => total + item.finalPrice, 0);
@@ -177,7 +144,7 @@ export default function AddOrderPage() {
         });
     });
 
-    const newItem = {
+    const newItem: OrderItem = {
         id: `${selectedDrink.id}-${Date.now()}`,
         name: selectedDrink.name,
         price: selectedDrink.price,
@@ -197,13 +164,23 @@ export default function AddOrderPage() {
   const resetOrder = () => {
     setOrderItems([]);
     setSelectedCustomer(null);
-    localStorage.removeItem('currentOrder');
-    localStorage.removeItem('currentOrderCustomer');
+    setCashReceived(null);
+    setPaymentMethod('card');
   }
 
   const handleFinalizeOrder = () => {
+    if (!firestore || !user) {
+        toast({
+            title: "Ошибка",
+            description: "Не удалось подключиться к базе данных. Попробуйте снова.",
+            variant: "destructive",
+        });
+        return;
+    }
+
+    const orderId = `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newOrder: Order = {
-        id: `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        id: orderId,
         customerName: selectedCustomer ? selectedCustomer.name : 'Гость',
         customerId: selectedCustomer ? selectedCustomer.id : undefined,
         items: orderItems,
@@ -212,18 +189,14 @@ export default function AddOrderPage() {
         totalPrice: totalPrice,
         paymentMethod: paymentMethod,
     };
+    
+    const orderRef = doc(firestore, 'orders', orderId);
+    
+    setDocumentNonBlocking(orderRef, newOrder, {});
 
-    try {
-        const existingOrders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]');
-        const updatedOrders = [...existingOrders, newOrder];
-        localStorage.setItem('orders', JSON.stringify(updatedOrders));
-        
-        playNotificationSound();
-        resetOrder();
-        setIsPaymentOpen(false);
-    } catch (error) {
-        console.error("Failed to save order to localStorage:", error);
-    }
+    playNotificationSound();
+    resetOrder();
+    setIsPaymentOpen(false);
   };
 
 

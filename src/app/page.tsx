@@ -1,18 +1,19 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Order } from '@/lib/types';
 import AppHeader from '@/components/app/header';
 import OrderCard from '@/components/app/order-card';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { Loader2 } from 'lucide-react';
+import { collection, query, where, orderBy, doc } from 'firebase/firestore';
+import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 export default function Home() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isInitialized, setIsInitialized] = useState(false);
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const firestore = useFirestore();
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -20,68 +21,23 @@ export default function Home() {
     }
   }, [isUserLoading, user, auth]);
 
-  const updateOrders = useCallback((newOrders: Order[]) => {
-    try {
-      const sortedOrders = newOrders.sort((a, b) => a.createdAt - b.createdAt);
-      setOrders(sortedOrders);
-      localStorage.setItem('orders', JSON.stringify(sortedOrders));
-    } catch (error) {
-      console.error("Could not save orders to localStorage:", error);
-    }
-  }, []);
-  
-  useEffect(() => {
-    const initializeOrders = () => {
-      try {
-        const storedOrders = localStorage.getItem('orders');
-        if (storedOrders) {
-          const initialData = JSON.parse(storedOrders);
-          const currentOrders = initialData.sort((a: Order, b: Order) => a.createdAt - b.createdAt);
-          setOrders(currentOrders);
-        } else {
-           localStorage.setItem('orders', JSON.stringify([]));
-        }
-      } catch (error) {
-        console.error("Could not parse orders from localStorage:", error);
-        setOrders([]);
-      }
-      setIsInitialized(true);
-    };
+  const ordersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(
+      collection(firestore, 'orders'),
+      orderBy('createdAt', 'asc')
+    );
+  }, [firestore]);
 
-    initializeOrders();
-  }, []);
-
-  useEffect(() => {
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'orders' && event.newValue) {
-        try {
-          const newOrders = JSON.parse(event.newValue);
-          setOrders(newOrders.sort((a: Order, b: Order) => a.createdAt - b.createdAt));
-        } catch (error) {
-          console.error("Could not parse orders from storage event:", error);
-        }
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, []);
-
+  const { data: orders, isLoading: areOrdersLoading } = useCollection<Order>(ordersQuery);
 
   const completeOrder = useCallback((orderId: string) => {
-    const orderToComplete = orders.find(o => o.id === orderId);
-    if (!orderToComplete) return;
-
-    const updatedOrders = orders.map(order => 
-        order.id === orderId ? { ...order, status: 'завершен' as const } : order
-    );
-    updateOrders(updatedOrders);
-  }, [orders, updateOrders]);
+    if (!firestore) return;
+    const orderRef = doc(firestore, 'orders', orderId);
+    updateDocumentNonBlocking(orderRef, { status: 'завершен' });
+  }, [firestore]);
   
-  if (!isInitialized || isUserLoading) {
+  if (isUserLoading || areOrdersLoading) {
     return (
         <div className="flex h-dvh w-full flex-col items-center justify-center bg-background">
             <div className="flex items-center gap-3">
@@ -95,7 +51,7 @@ export default function Home() {
     );
   }
 
-  const preparingOrders = orders.filter(o => o.status === 'готовится');
+  const preparingOrders = orders ? orders.filter(o => o.status === 'готовится') : [];
 
   return (
     <div className="flex h-dvh w-full flex-col bg-background font-body text-foreground">

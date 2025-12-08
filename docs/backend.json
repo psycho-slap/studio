@@ -10,34 +10,61 @@
           "type": "string",
           "description": "Unique identifier for the order."
         },
-        "orderTime": {
-          "type": "string",
-          "description": "The date and time the order was placed.",
-          "format": "date-time"
+        "createdAt": {
+          "type": "number",
+          "description": "The timestamp when the order was placed."
         },
         "status": {
           "type": "string",
-          "description": "The current status of the order (e.g., 'pending', 'in progress', 'ready')."
+          "description": "The current status of the order (e.g., 'готовится', 'завершен').",
+          "enum": ["готовится", "завершен"]
         },
         "items": {
           "type": "array",
           "description": "A list of items in the order.",
-          "items": {
-            "type": "string"
-          }
+          "items": { "$ref": "#/backend/entities/OrderItem" }
         },
         "customerId": {
           "type": "string",
-          "description": "Reference to Customer. (Relationship: Customer 1:N Order)"
+          "description": "Optional reference to a Customer."
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Name of the customer or 'Гость'."
+        },
+        "totalPrice": {
+          "type": "number",
+          "description": "The total price of the order."
+        },
+        "paymentMethod": {
+          "type": "string",
+          "description": "Payment method used for the order.",
+          "enum": ["card", "cash"]
         }
       },
       "required": [
         "id",
-        "orderTime",
+        "createdAt",
         "status",
         "items",
-        "customerId"
+        "customerName",
+        "totalPrice",
+        "paymentMethod"
       ]
+    },
+    "OrderItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "OrderItem",
+      "type": "object",
+      "description": "Represents a single item within an order.",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "price": { "type": "number" },
+        "customizations": { "type": "string" },
+        "finalPrice": { "type": "number" }
+      },
+      "required": ["id", "name", "price", "finalPrice"]
     },
     "Customer": {
       "$schema": "http://json-schema.org/draft-07/schema#",
@@ -83,7 +110,7 @@
           "schema": {
             "$ref": "#/backend/entities/Customer"
           },
-          "description": "Stores customer information, using the customerId as the document ID. Allows baristas to create and edit customer cards.",
+          "description": "Stores customer information, using the customerId as the document ID.",
           "params": [
             {
               "name": "customerId",
@@ -93,26 +120,21 @@
         }
       },
       {
-        "path": "/customers/{customerId}/orders/{orderId}",
+        "path": "/orders/{orderId}",
         "definition": {
           "entityName": "Order",
           "schema": {
             "$ref": "#/backend/entities/Order"
           },
-          "description": "Stores order information for each customer. Includes the customerId to maintain the relationship between customers and orders.",
+          "description": "Stores all orders for the application.",
           "params": [
-            {
-              "name": "customerId",
-              "description": "Unique identifier for the customer. This is derived from the customer's phone number."
-            },
-            {
+             {
               "name": "orderId",
               "description": "Unique identifier for the order."
             }
           ]
         }
       }
-    ],
-    "reasoning": "The Firestore structure is designed to manage customer and order data for the BaristaTrack application. It prioritizes authorization independence by using path-based ownership for customer data and referencing customer data in the order data.  This design supports secure `list` operations (QAPs) by segregating customer and order data. Because the application requires the ability to track guest information based on phone number, and allow baristas to create and modify this guest information, we store the Customers outside of the `/users/{userId}` path, using the `phoneNumber` as the document id. Orders are stored at `/customers/{customerId}/orders/{orderId}`. This structure enables simple security rules that grant access based on customer ID. All writes will be performed by authenticated users, and therefore any authorization checks can be performed on the `request.auth.uid` field."
+    ]
   }
 }

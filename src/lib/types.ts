@@ -1,3 +1,5 @@
+import { type Timestamp } from "firebase/firestore";
+
 export type OrderStatus = 'готовится' | 'завершен';
 export type PaymentMethod = 'cash' | 'card';
 
@@ -37,7 +39,7 @@ export interface Order {
   customerId?: string; // Optional customer ID from Firestore
   items: OrderItem[];
   status: OrderStatus;
-  createdAt: number;
+  createdAt: number; // Using number (timestamp) for simplicity across client/server
   totalPrice: number;
   paymentMethod: PaymentMethod;
 }
