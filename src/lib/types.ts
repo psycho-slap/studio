@@ -1,20 +1,41 @@
 export type OrderStatus = 'готовится' | 'завершен';
 export type PaymentMethod = 'cash' | 'card';
 
+export interface Modifier {
+    id: string;
+    name: string;
+    price: number;
+}
+
+export interface ModifierGroup {
+    id: string;
+    name: string;
+    items: Modifier[];
+}
+
 export interface Drink {
   id: string;
   name: string;
-  prepTime: number; // in minutes, for AI optimization logic
+  category: string;
+  prepTime: number; 
   price: number;
+  modifiers: ModifierGroup[];
+}
+
+export interface OrderItem {
+    id: string; // drinkId
+    name: string;
+    price: number;
+    customizations: string; // e.g., "Oat Milk, 1 Sugar"
+    finalPrice: number;
 }
 
 export interface Order {
   id: string;
   customerName: string;
-  drinkId: string;
-  customizations: string;
+  items: OrderItem[];
   status: OrderStatus;
   createdAt: number;
-  price: number;
+  totalPrice: number;
   paymentMethod: PaymentMethod;
 }

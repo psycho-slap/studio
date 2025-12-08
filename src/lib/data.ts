@@ -1,65 +1,120 @@
 import type { Drink, Order } from './types';
 
+const milkModifiers = {
+    id: 'milk',
+    name: 'Молоко',
+    items: [
+        { id: 'whole-milk', name: 'Обычное молоко', price: 0 },
+        { id: 'oat-milk', name: 'Овсяное молоко', price: 50 },
+        { id: 'soy-milk', name: 'Соевое молоко', price: 50 },
+        { id: 'almond-milk', name: 'Миндальное молоко', price: 60 },
+    ],
+};
+
+const syrupModifiers = {
+    id: 'syrup',
+    name: 'Сироп',
+    items: [
+        { id: 'no-syrup', name: 'Без сиропа', price: 0 },
+        { id: 'vanilla', name: 'Ванильный', price: 40 },
+        { id: 'caramel', name: 'Карамельный', price: 40 },
+        { id: 'hazelnut', name: 'Ореховый', price: 40 },
+    ],
+};
+
+const extrasModifiers = {
+    id: 'extras',
+    name: 'Добавки',
+    items: [
+        { id: 'no-extras', name: 'Ничего', price: 0 },
+        { id: 'extra-shot', name: 'Доп. шот эспрессо', price: 70 },
+        { id: 'cinnamon', name: 'Корица', price: 20 },
+        { id: 'whipped-cream', name: 'Взбитые сливки', price: 60 },
+    ]
+}
+
+
 export const DRINKS: Drink[] = [
-  { id: 'espresso', name: 'Эспрессо', prepTime: 2, price: 150 },
-  { id: 'cappuccino', name: 'Капучино', prepTime: 3, price: 250 },
-  { id: 'latte', name: 'Латте', prepTime: 4, price: 280 },
-  { id: 'americano', name: 'Американо', prepTime: 2, price: 180 },
-  { id: 'mocha', name: 'Мокка', prepTime: 5, price: 320 },
-  { id: 'flat-white', name: 'Флэт Уайт', prepTime: 3, price: 260 },
-  { id: 'iced-coffee', name: 'Холодный кофе', prepTime: 3, price: 220 },
-  { id: 'herbal-tea', name: 'Травяной чай', prepTime: 2, price: 120 },
+  { 
+    id: 'cappuccino', 
+    name: 'Капучино', 
+    category: 'Кофе',
+    prepTime: 3, 
+    price: 250,
+    modifiers: [milkModifiers, syrupModifiers, extrasModifiers]
+  },
+  { 
+    id: 'latte', 
+    name: 'Латте', 
+    category: 'Кофе',
+    prepTime: 4, 
+    price: 280,
+    modifiers: [milkModifiers, syrupModifiers, extrasModifiers]
+  },
+  { 
+    id: 'espresso', 
+    name: 'Эспрессо', 
+    category: 'Кофе',
+    prepTime: 2, 
+    price: 150,
+    modifiers: [extrasModifiers]
+  },
+  { 
+    id: 'americano', 
+    name: 'Американо', 
+    category: 'Кофе',
+    prepTime: 2, 
+    price: 180,
+    modifiers: [extrasModifiers]
+  },
+  { 
+    id: 'mocha', 
+    name: 'Мокка', 
+    category: 'Кофе',
+    prepTime: 5, 
+    price: 320,
+    modifiers: [milkModifiers, extrasModifiers]
+  },
+  { 
+    id: 'flat-white', 
+    name: 'Флэт Уайт',
+    category: 'Кофе', 
+    prepTime: 3, 
+    price: 260,
+    modifiers: [milkModifiers]
+  },
+  { 
+    id: 'iced-coffee', 
+    name: 'Холодный кофе', 
+    category: 'Холодные напитки',
+    prepTime: 3, 
+    price: 220,
+    modifiers: [syrupModifiers]
+  },
+  { 
+    id: 'herbal-tea', 
+    name: 'Травяной чай', 
+    category: 'Чай',
+    prepTime: 2, 
+    price: 120,
+    modifiers: []
+  },
+  { 
+    id: 'black-tea', 
+    name: 'Черный чай', 
+    category: 'Чай',
+    prepTime: 2, 
+    price: 120,
+    modifiers: []
+  },
+  { 
+    id: 'green-tea', 
+    name: 'Зеленый чай', 
+    category: 'Чай',
+    prepTime: 2, 
+    price: 120,
+    modifiers: []
+  },
 ];
 
-export const INITIAL_ORDERS: Order[] = [
-  {
-    id: `order-1`,
-    customerName: 'Алиса',
-    drinkId: 'cappuccino',
-    customizations: 'Дополнительная пена, овсяное молоко',
-    status: 'готовится',
-    createdAt: Date.now() - 300000,
-    price: 250,
-    paymentMethod: 'card',
-  },
-  {
-    id: `order-2`,
-    customerName: 'Борис',
-    drinkId: 'latte',
-    customizations: 'С карамельным сиропом',
-    status: 'готовится',
-    createdAt: Date.now() - 240000,
-    price: 280,
-    paymentMethod: 'cash',
-  },
-  {
-    id: `order-3`,
-    customerName: 'Карл',
-    drinkId: 'espresso',
-    customizations: 'Двойной шот',
-    status: 'готовится',
-    createdAt: Date.now() - 180000,
-    price: 150,
-    paymentMethod: 'card',
-  },
-  {
-    id: `order-4`,
-    customerName: 'Диана',
-    drinkId: 'americano',
-    customizations: '',
-    status: 'завершен',
-    createdAt: Date.now() - 120000,
-    price: 180,
-    paymentMethod: 'card',
-  },
-    {
-    id: `order-5`,
-    customerName: 'Ева',
-    drinkId: 'mocha',
-    customizations: 'Без взбитых сливок',
-    status: 'готовится',
-    createdAt: Date.now() - 60000,
-    price: 320,
-    paymentMethod: 'cash',
-  },
-];
+export const INITIAL_ORDERS: Order[] = [];

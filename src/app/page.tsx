@@ -47,6 +47,14 @@ export default function Home() {
       if (event.key === 'orders' && event.newValue) {
         try {
           const newOrders = JSON.parse(event.newValue);
+          const newPreparingOrder = newOrders.find((newOrder: Order) => 
+            !orders.some((oldOrder: Order) => oldOrder.id === newOrder.id) && newOrder.status === 'готовится'
+          );
+
+          if (newPreparingOrder) {
+            // Logic to handle new order, e.g. play sound, is now in add-order page
+          }
+
           setOrders(newOrders.sort((a: Order, b: Order) => a.createdAt - b.createdAt));
         } catch (error) {
           console.error("Could not parse orders from storage event:", error);
@@ -59,7 +67,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
+  }, [orders]);
 
 
   const completeOrder = useCallback((orderId: string) => {
@@ -70,12 +78,7 @@ export default function Home() {
         order.id === orderId ? { ...order, status: 'завершен' as const } : order
     );
     updateOrders(updatedOrders);
-     
-    toast({
-      title: 'Заказ выполнен',
-      description: `${orderToComplete.customerName || 'Заказ'} был отмечен как завершенный.`,
-    });
-  }, [orders, toast, updateOrders]);
+  }, [orders, updateOrders]);
   
   if (!isInitialized) {
     return (

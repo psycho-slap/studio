@@ -12,14 +12,15 @@ export default function CompletedOrdersPage() {
     const [isInitialized, setIsInitialized] = useState(false);
     
     const updateOrders = useCallback((newOrders: Order[]) => {
-        setOrders(newOrders.sort((a, b) => b.createdAt - a.createdAt)); // Show newest first
+        // Show newest first
+        setOrders(newOrders.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
     }, []);
 
     useEffect(() => {
         const initializeOrders = () => {
             try {
                 const storedOrders = localStorage.getItem('orders');
-                const allOrders = storedOrders ? JSON.parse(storedOrders) : [];
+                const allOrders: Order[] = storedOrders ? JSON.parse(storedOrders) : [];
                 updateOrders(allOrders);
             } catch (error) {
                 console.error("Could not parse orders from localStorage:", error);
@@ -33,13 +34,13 @@ export default function CompletedOrdersPage() {
 
     useEffect(() => {
         const handleStorageChange = (event: StorageEvent) => {
-        if (event.key === 'orders' && event.newValue) {
-            try {
-                updateOrders(JSON.parse(event.newValue));
-            } catch (error) {
-                console.error("Could not parse orders from storage event:", error);
+            if (event.key === 'orders' && event.newValue) {
+                try {
+                    updateOrders(JSON.parse(event.newValue));
+                } catch (error) {
+                    console.error("Could not parse orders from storage event:", error);
+                }
             }
-        }
         };
 
         window.addEventListener('storage', handleStorageChange);
