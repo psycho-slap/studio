@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { Order } from '@/lib/types';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, DollarSign, ShoppingCart, BarChart, Users, LayoutDashboard, Clock } from 'lucide-react';
+import { ArrowLeft, Loader2, DollarSign, ShoppingCart, BarChart, Users, LayoutDashboard, Clock, CalendarIcon } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useAuth } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -20,28 +20,58 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
-const getStartOfToday = () => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    return now.getTime();
+
+const getStartOfDay = (date: Date) => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    return d;
 }
+
+const getEndOfDay = (date: Date) => {
+    const d = new Date(date);
+    d.setHours(23, 59, 59, 999);
+    return d;
+}
+
 
 export default function DashboardPage() {
     const firestore = useFirestore();
     const { user, isUserLoading } = useUser();
     const auth = useAuth();
+    
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+    const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'card' | 'cash'>('all');
 
-    const startOfToday = useMemo(() => getStartOfToday(), []);
+
+    const dateRange = useMemo(() => {
+        const start = getStartOfDay(selectedDate);
+        const end = getEndOfDay(selectedDate);
+        return { start, end };
+    }, [selectedDate]);
 
     const ordersQuery = useMemoFirebase(() => {
         if (!firestore || !user) return null;
+        
+        const qConstraints = [
+            where('createdAt', '>=', dateRange.start.getTime()),
+            where('createdAt', '<=', dateRange.end.getTime())
+        ];
+
+        if (paymentMethodFilter !== 'all') {
+            qConstraints.push(where('paymentMethod', '==', paymentMethodFilter));
+        }
+        
         return query(
             collection(firestore, 'orders'),
-            where('createdAt', '>=', startOfToday),
+            ...qConstraints,
             orderBy('createdAt', 'desc')
         );
-    }, [firestore, user, startOfToday]);
+    }, [firestore, user, dateRange, paymentMethodFilter]);
 
     const { data: orders, isLoading: areOrdersLoading } = useCollection<Order>(ordersQuery);
 
@@ -100,7 +130,43 @@ export default function DashboardPage() {
             </header>
             <main className="flex-1 overflow-y-auto p-4 md:p-6">
                 <div className="mx-auto max-w-7xl">
-                    <h2 className="text-xl font-semibold mb-4">Показатели за сегодня ({format(new Date(), 'dd MMMM yyyy', { locale: ru })})</h2>
+                    <div className="flex justify-between items-center mb-4">
+                         <h2 className="text-xl font-semibold">Показатели за {format(selectedDate, 'dd MMMM yyyy', { locale: ru })}</h2>
+                         <div className="flex items-center gap-2">
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                    "w-[240px] justify-start text-left font-normal",
+                                    !selectedDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {selectedDate ? format(selectedDate, 'dd MMMM yyyy', { locale: ru }) : <span>Выберите дату</span>}
+                                </Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="end">
+                                    <Calendar
+                                        mode="single"
+                                        selected={selectedDate}
+                                        onSelect={(date) => date && setSelectedDate(date)}
+                                        initialFocus
+                                    />
+                                </PopoverContent>
+                            </Popover>
+                             <Select value={paymentMethodFilter} onValueChange={(value: 'all' | 'card' | 'cash') => setPaymentMethodFilter(value)}>
+                                <SelectTrigger className="w-[180px]">
+                                    <SelectValue placeholder="Способ оплаты" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Все</SelectItem>
+                                    <SelectItem value="card">Карта</SelectItem>
+                                    <SelectItem value="cash">Наличные</SelectItem>
+                                </SelectContent>
+                            </Select>
+                         </div>
+                    </div>
                     {/* Stats Cards */}
                     <div className="grid gap-4 md:grid-cols-4">
                         <Card>
@@ -144,7 +210,7 @@ export default function DashboardPage() {
                     {/* Recent Orders Table */}
                     <Card className="mt-6">
                         <CardHeader>
-                            <CardTitle>Последние заказы</CardTitle>
+                            <CardTitle>Заказы за день</CardTitle>
                         </CardHeader>
                         <CardContent>
                              <Table>
@@ -154,6 +220,7 @@ export default function DashboardPage() {
                                     <TableHead>Клиент</TableHead>
                                     <TableHead>Состав заказа</TableHead>
                                     <TableHead>Сумма</TableHead>
+                                    <TableHead>Тип оплаты</TableHead>
                                     <TableHead>Статус</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -161,10 +228,15 @@ export default function DashboardPage() {
                                     {orders && orders.length > 0 ? (
                                     orders.map((order) => (
                                         <TableRow key={order.id}>
-                                            <TableCell>{format(order.createdAt, 'HH:mm')}</TableCell>
+                                            <TableCell>{format(order.createdAt, 'HH:mm:ss')}</TableCell>
                                             <TableCell>{order.customerName}</TableCell>
                                             <TableCell>{order.items.map(i => i.name).join(', ')}</TableCell>
                                             <TableCell>{order.totalPrice} руб.</TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">
+                                                    {order.paymentMethod === 'card' ? 'Карта' : 'Наличные'}
+                                                </Badge>
+                                            </TableCell>
                                             <TableCell>
                                                 <Badge variant={order.status === 'завершен' ? 'secondary' : 'default'}>
                                                     {order.status}
@@ -174,8 +246,8 @@ export default function DashboardPage() {
                                     ))
                                     ) : (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">
-                                            Заказов за сегодня еще не было.
+                                        <TableCell colSpan={6} className="h-24 text-center">
+                                            За выбранный период заказов не найдено.
                                         </TableCell>
                                     </TableRow>
                                     )}
