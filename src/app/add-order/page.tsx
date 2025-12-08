@@ -41,6 +41,15 @@ const defaultFormValues: OrderFormValues = {
   drinkId: '',
 };
 
+const playNotificationSound = () => {
+    try {
+        const audio = new Audio('/notification.mp3');
+        audio.play();
+    } catch (error) {
+        console.error("Could not play notification sound:", error);
+    }
+}
+
 export default function AddOrderPage() {
   const { toast } = useToast();
 
@@ -66,6 +75,8 @@ export default function AddOrderPage() {
         const existingOrders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]');
         const updatedOrders = [...existingOrders, newOrder]; // Append new orders
         localStorage.setItem('orders', JSON.stringify(updatedOrders));
+        
+        playNotificationSound();
 
         toast({
             title: 'Заказ добавлен',

@@ -7,14 +7,25 @@ import AppHeader from '@/components/app/header';
 import OrderCard from '@/components/app/order-card';
 import { useToast } from '@/hooks/use-toast';
 
+const playNotificationSound = () => {
+    try {
+        const audio = new Audio('/notification.mp3');
+        audio.play();
+    } catch (error) {
+        console.error("Could not play notification sound:", error);
+    }
+}
+
 export default function Home() {
   const [orders, setOrders] = useState<Order[]>([]);
   const { toast } = useToast();
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const updateOrders = useCallback((newOrders: Order[]) => {
+  const updateOrders = useCallback((newOrders: Order[], playSound: boolean = false) => {
     try {
-      // Sort by creation time to ensure chronological order
+      if (playSound) {
+        playNotificationSound();
+      }
       const sortedOrders = newOrders.sort((a, b) => a.createdAt - b.createdAt);
       setOrders(sortedOrders);
       localStorage.setItem('orders', JSON.stringify(sortedOrders));
@@ -24,29 +35,33 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // This effect runs once on the client to initialize orders from localStorage
     const initializeOrders = () => {
       try {
         const storedOrders = localStorage.getItem('orders');
         const initialData = storedOrders ? JSON.parse(storedOrders) : INITIAL_ORDERS;
-        updateOrders(initialData);
+        setOrders(initialData.sort((a: Order, b: Order) => a.createdAt - b.createdAt));
+        if (!storedOrders) {
+            localStorage.setItem('orders', JSON.stringify(initialData));
+        }
       } catch (error) {
         console.error("Could not parse orders from localStorage:", error);
-        updateOrders(INITIAL_ORDERS);
+        setOrders(INITIAL_ORDERS);
       }
       setIsInitialized(true);
     };
 
     initializeOrders();
-  }, [updateOrders]);
+  }, []);
 
   useEffect(() => {
-    // This effect handles cross-tab synchronization
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'orders' && event.newValue) {
         try {
           const newOrders = JSON.parse(event.newValue);
-          updateOrders(newOrders);
+          const oldOrderCount = orders.length;
+          const newOrderCount = newOrders.length;
+          // Play sound only if a new order was added
+          updateOrders(newOrders, newOrderCount > oldOrderCount);
         } catch (error) {
           console.error("Could not parse orders from storage event:", error);
         }
@@ -58,7 +73,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [updateOrders]);
+  }, [orders, updateOrders]);
 
 
   const completeOrder = useCallback((orderId: string) => {
