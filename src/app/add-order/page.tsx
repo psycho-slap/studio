@@ -4,71 +4,87 @@ import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { ArrowLeft, Trash2 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import type { OrderItem, Drink } from '@/lib/types';
+import { ArrowLeft, Trash2, Plus, CreditCard, Landmark, X } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import type { Order, OrderItem, Drink } from '@/lib/types';
 import { DRINKS } from '@/lib/data';
 import { Separator } from '@/components/ui/separator';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+
+const playNotificationSound = () => {
+  try {
+    const audio = new Audio('/notification.mp3');
+    audio.play().catch(e => console.error("Error playing notification sound:", e));
+  } catch (error) {
+    console.error("Could not play notification sound:", error);
+  }
+};
+
 
 const DrinkCategories = DRINKS.reduce((acc, drink) => {
-    if (!acc[drink.category]) {
-        acc[drink.category] = [];
-    }
-    acc[drink.category].push(drink);
-    return acc;
+  if (!acc[drink.category]) {
+    acc[drink.category] = [];
+  }
+  acc[drink.category].push(drink);
+  return acc;
 }, {} as Record<string, Drink[]>);
 
+type PaymentMethod = 'card' | 'cash';
 
 export default function AddOrderPage() {
-  const router = useRouter();
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [loyaltyPhoneNumber, setLoyaltyPhoneNumber] = useState('');
   
-  const loadOrderFromStorage = () => {
-    try {
-        const savedOrder = localStorage.getItem('currentOrder');
-        if (savedOrder) {
-            setOrderItems(JSON.parse(savedOrder));
-        }
-        const savedPhone = localStorage.getItem('currentOrderPhone');
-        if (savedPhone) {
-            setLoyaltyPhoneNumber(savedPhone);
-        }
-    } catch (error) {
-        console.error("Failed to load current order from localStorage", error);
-    }
-  };
+  // State for modifiers dialog
+  const [isModifierOpen, setIsModifierOpen] = useState(false);
+  const [selectedDrink, setSelectedDrink] = useState<Drink | null>(null);
+  const [currentModifiers, setCurrentModifiers] = useState<Record<string, Set<string>>>({});
+  
+  // State for payment dialog
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
+  const [cashReceived, setCashReceived] = useState<number | null>(null);
 
   useEffect(() => {
-    loadOrderFromStorage();
-
-    const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === 'currentOrder' || event.key === 'currentOrderPhone') {
-        loadOrderFromStorage();
+    try {
+      const savedOrder = localStorage.getItem('currentOrder');
+      if (savedOrder) {
+        setOrderItems(JSON.parse(savedOrder));
       }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
+      const savedPhone = localStorage.getItem('currentOrderPhone');
+      if (savedPhone) {
+        setLoyaltyPhoneNumber(savedPhone);
+      }
+    } catch (error) {
+      console.error("Failed to load state from localStorage", error);
+    }
   }, []);
 
   useEffect(() => {
     try {
-        localStorage.setItem('currentOrder', JSON.stringify(orderItems));
+      localStorage.setItem('currentOrder', JSON.stringify(orderItems));
     } catch (error) {
-        console.error("Failed to save current order to localStorage", error);
+      console.error("Failed to save order to localStorage", error);
     }
   }, [orderItems]);
 
   useEffect(() => {
     try {
-        localStorage.setItem('currentOrderPhone', loyaltyPhoneNumber);
+      localStorage.setItem('currentOrderPhone', loyaltyPhoneNumber);
     } catch (error) {
-        console.error("Failed to save phone number to localStorage", error);
+      console.error("Failed to save phone to localStorage", error);
     }
   }, [loyaltyPhoneNumber]);
 
@@ -76,12 +92,81 @@ export default function AddOrderPage() {
   const totalPrice = useMemo(() => {
     return orderItems.reduce((total, item) => total + item.finalPrice, 0);
   }, [orderItems]);
-
+  
+  const change = useMemo(() => {
+    if (paymentMethod === 'cash' && cashReceived !== null && cashReceived >= totalPrice) {
+        return cashReceived - totalPrice;
+    }
+    return null;
+  }, [paymentMethod, cashReceived, totalPrice]);
 
   const handleDrinkSelect = (drink: Drink) => {
-    router.push(`/add-order/modifiers?drinkId=${drink.id}`);
+    setSelectedDrink(drink);
+    const defaultModifiers: Record<string, Set<string>> = {};
+    drink.modifiers.forEach(group => {
+        if (group.type === 'single' && group.items.length > 0) {
+            defaultModifiers[group.id] = new Set([group.items[0].id]);
+        } else {
+            defaultModifiers[group.id] = new Set();
+        }
+    });
+    setCurrentModifiers(defaultModifiers);
+    setIsModifierOpen(true);
   };
   
+  const handleModifierChange = (groupId: string, modifierId: string, groupType: 'single' | 'multiple') => {
+    setCurrentModifiers(prev => {
+        const newModifiers = { ...prev };
+        const currentSet = new Set(newModifiers[groupId] || []);
+
+        if (groupType === 'single') {
+            newModifiers[groupId] = new Set([modifierId]);
+        } else {
+            if (currentSet.has(modifierId)) {
+                currentSet.delete(modifierId);
+            } else {
+                currentSet.add(modifierId);
+            }
+            newModifiers[groupId] = currentSet;
+        }
+        return newModifiers;
+    });
+  };
+
+  const handleAddDrinkToOrder = () => {
+    if (!selectedDrink) return;
+
+    let finalPrice = selectedDrink.price;
+    const customizations: string[] = [];
+
+    Object.entries(currentModifiers).forEach(([groupId, modifierIds]) => {
+        const group = selectedDrink.modifiers.find(g => g.id === groupId);
+        if (!group) return;
+
+        modifierIds.forEach(modifierId => {
+            const modifier = group.items.find(i => i.id === modifierId);
+            if (modifier) {
+                finalPrice += modifier.price;
+                 if (group.type === 'multiple' || (group.type === 'single' && modifier.id !== group.items[0].id)) {
+                    customizations.push(modifier.name);
+                }
+            }
+        });
+    });
+
+    const newItem = {
+        id: `${selectedDrink.id}-${Date.now()}`,
+        name: selectedDrink.name,
+        price: selectedDrink.price,
+        customizations: customizations.join(', '),
+        finalPrice: finalPrice,
+    };
+    
+    setOrderItems(prev => [...prev, newItem]);
+    setIsModifierOpen(false);
+  };
+
+
   const handleRemoveItem = (itemId: string) => {
     setOrderItems(prev => prev.filter((item) => item.id !== itemId));
   }
@@ -92,10 +177,31 @@ export default function AddOrderPage() {
     localStorage.removeItem('currentOrder');
     localStorage.removeItem('currentOrderPhone');
   }
-  
-  const handleGoToPayment = () => {
-      router.push('/add-order/payment');
-  }
+
+  const handleFinalizeOrder = () => {
+    const newOrder: Order = {
+        id: `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        customerName: loyaltyPhoneNumber ? `Loyalty: ${loyaltyPhoneNumber}` : 'Гость',
+        items: orderItems,
+        status: 'готовится',
+        createdAt: Date.now(),
+        totalPrice: totalPrice,
+        paymentMethod: paymentMethod,
+    };
+
+    try {
+        const existingOrders: Order[] = JSON.parse(localStorage.getItem('orders') || '[]');
+        const updatedOrders = [...existingOrders, newOrder];
+        localStorage.setItem('orders', JSON.stringify(updatedOrders));
+        
+        playNotificationSound();
+        resetOrder();
+        setIsPaymentOpen(false);
+    } catch (error) {
+        console.error("Failed to save order to localStorage:", error);
+    }
+  };
+
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -114,7 +220,6 @@ export default function AddOrderPage() {
       </header>
       
       <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0">
-        {/* Step 1: Selection */}
         <div className="p-4 md:p-6 overflow-y-auto md:col-span-2">
             <h2 className="text-2xl font-bold font-headline mb-4">Ассортимент</h2>
             {Object.entries(DrinkCategories).map(([category, drinks]) => (
@@ -137,7 +242,6 @@ export default function AddOrderPage() {
             ))}
         </div>
 
-        {/* Order Summary */}
         <div className="flex flex-col border-l bg-card p-4 md:p-6">
            <div className="flex-1 overflow-y-auto">
              <h2 className="text-2xl font-bold font-headline mb-1">Текущий заказ</h2>
@@ -176,13 +280,12 @@ export default function AddOrderPage() {
            
            <Separator className="my-4"/>
 
-            {/* Total and Payment */}
             <div className="mt-auto space-y-4">
                  <div className="flex justify-between items-center text-xl font-bold">
                     <span>Итого:</span>
                     <span>{totalPrice} руб.</span>
                 </div>
-                <Button size="lg" className="w-full" onClick={handleGoToPayment} disabled={orderItems.length === 0}>
+                <Button size="lg" className="w-full" onClick={() => setIsPaymentOpen(true)} disabled={orderItems.length === 0}>
                     К оплате
                 </Button>
                  <Button variant="ghost" size="sm" className="w-full text-destructive" onClick={resetOrder}>
@@ -191,6 +294,129 @@ export default function AddOrderPage() {
             </div>
         </div>
       </main>
+
+      {/* Modifiers Dialog */}
+      <Dialog open={isModifierOpen} onOpenChange={setIsModifierOpen}>
+        <DialogContent className="max-w-md">
+            {selectedDrink && (
+              <>
+                <DialogHeader>
+                    <DialogTitle>Настроить «{selectedDrink.name}»</DialogTitle>
+                </DialogHeader>
+                <div className="flex max-h-[60vh] flex-col">
+                  <ScrollArea className="flex-1 pr-4">
+                      <div className="space-y-6">
+                          {selectedDrink.modifiers.map(group => (
+                              <div key={group.id}>
+                                  <Label className="text-base font-semibold">{group.name}</Label>
+                                  {group.type === 'single' ? (
+                                      <RadioGroup 
+                                          value={Array.from(currentModifiers[group.id] || [])[0]}
+                                          onValueChange={(value) => handleModifierChange(group.id, value, group.type)}
+                                          className="mt-2 space-y-2"
+                                      >
+                                          {group.items.map(item => (
+                                              <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
+                                                  <Label htmlFor={`radio-${item.id}`} className="flex items-center gap-3 cursor-pointer w-full">
+                                                      <RadioGroupItem value={item.id} id={`radio-${item.id}`} />
+                                                      {item.name}
+                                                  </Label>
+                                                  {item.price > 0 && <Badge variant="secondary">+{item.price} руб.</Badge>}
+                                              </div>
+                                          ))}
+                                      </RadioGroup>
+                                  ) : (
+                                      <div className="mt-2 space-y-2">
+                                      {group.items.map(item => (
+                                          <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
+                                              <Label htmlFor={`check-${item.id}`} className="flex items-center gap-3 cursor-pointer w-full">
+                                                  <Checkbox
+                                                      id={`check-${item.id}`}
+                                                      checked={currentModifiers[group.id]?.has(item.id)}
+                                                      onCheckedChange={() => handleModifierChange(group.id, item.id, group.type)}
+                                                  />
+                                                  {item.name}
+                                              </Label>
+                                              {item.price > 0 && <Badge variant="secondary">+{item.price} руб.</Badge>}
+                                          </div>
+                                      ))}
+                                      </div>
+                                  )}
+                              </div>
+                          ))}
+                      </div>
+                  </ScrollArea>
+                </div>
+                <DialogFooter>
+                    <Button size="lg" className="w-full" onClick={handleAddDrinkToOrder}>
+                        <Plus className="mr-2"/> Добавить в заказ
+                    </Button>
+                </DialogFooter>
+              </>
+            )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Payment Dialog */}
+      <Dialog open={isPaymentOpen} onOpenChange={setIsPaymentOpen}>
+         <DialogContent className="max-w-md">
+            <DialogHeader>
+                <DialogTitle>Оплата заказа</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+                <h3 className="font-semibold text-lg">Чек</h3>
+                <ScrollArea className="h-40 border rounded-md p-2">
+                    <div className="space-y-1 pr-4">
+                    {orderItems.map(item => (
+                        <div key={item.id} className="flex justify-between text-sm">
+                            <span>{item.name}{item.customizations ? ` (${item.customizations})` : ''}</span>
+                            <span>{item.finalPrice} руб.</span>
+                        </div>
+                    ))}
+                    </div>
+                </ScrollArea>
+                <Separator />
+                <div className="flex justify-between font-bold text-lg">
+                    <span>Итого:</span>
+                    <span>{totalPrice} руб.</span>
+                </div>
+                <Separator />
+
+                <div>
+                    <Label className="mb-2 block">Способ оплаты</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                        <Button type="button" variant={paymentMethod === 'card' ? 'default' : 'secondary'} onClick={() => setPaymentMethod('card')}>
+                            <CreditCard /> Карта
+                        </Button>
+                        <Button type="button" variant={paymentMethod === 'cash' ? 'default' : 'secondary'} onClick={() => setPaymentMethod('cash')}>
+                            <Landmark /> Наличные
+                        </Button>
+                    </div>
+                </div>
+
+                {paymentMethod === 'cash' && (
+                    <div>
+                        <Label htmlFor="cash-received">Принято наличными</Label>
+                        <Input
+                            id="cash-received"
+                            type="number"
+                            placeholder="Например, 500"
+                            value={cashReceived ?? ''}
+                            onChange={(e) => setCashReceived(e.target.value ? Number(e.target.value) : null)}
+                        />
+                        {change !== null && (
+                            <p className="mt-2 text-lg font-semibold text-primary">Сдача: {change.toFixed(2)} руб.</p>
+                        )}
+                    </div>
+                )}
+            </div>
+            <DialogFooter>
+                 <Button size="lg" className="w-full" onClick={handleFinalizeOrder} disabled={paymentMethod === 'cash' && (cashReceived === null || cashReceived < totalPrice)}>
+                    Оплатить и разместить заказ
+                </Button>
+            </DialogFooter>
+         </DialogContent>
+      </Dialog>
     </div>
   );
 }

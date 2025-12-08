@@ -24,7 +24,7 @@ export interface Drink {
 }
 
 export interface OrderItem {
-    id: string; // unique item id
+    id: string; // unique item id in one order
     name: string;
     price: number;
     customizations: string; // e.g., "Oat Milk, Vanilla"
