@@ -75,7 +75,6 @@ export default function AddOrderPage() {
     const defaultModifiers: Record<string, Set<string>> = {};
     drink.modifiers.forEach(group => {
       if(group.items.length > 0) {
-        // For single selection, select the first one by default. For multiple, none are selected.
         if (group.type === 'single') {
             defaultModifiers[group.id] = new Set([group.items[0].id]);
         } else {
@@ -280,19 +279,19 @@ export default function AddOrderPage() {
                 </DialogHeader>
                 <div className="flex-1 min-h-0">
                     <ScrollArea className="h-full">
-                        <div className="space-y-4 pr-6">
+                        <div className="space-y-6 pr-6">
                             {selectedDrink?.modifiers.map(group => (
                                 <div key={group.id}>
-                                    <Label className="text-base">{group.name}</Label>
+                                    <Label className="text-base font-semibold">{group.name}</Label>
                                     {group.type === 'single' ? (
                                         <RadioGroup 
                                             value={Array.from(currentModifiers[group.id] || [])[0]}
                                             onValueChange={(value) => handleModifierChange(group.id, value, group.type)}
-                                            className="mt-2 space-y-1"
+                                            className="mt-2 space-y-2"
                                         >
                                             {group.items.map(item => (
                                                 <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
-                                                    <Label htmlFor={`radio-${item.id}`} className="flex items-center gap-3 cursor-pointer">
+                                                    <Label htmlFor={`radio-${item.id}`} className="flex items-center gap-3 cursor-pointer w-full">
                                                         <RadioGroupItem value={item.id} id={`radio-${item.id}`} />
                                                         {item.name}
                                                     </Label>
@@ -301,10 +300,10 @@ export default function AddOrderPage() {
                                             ))}
                                         </RadioGroup>
                                     ) : (
-                                        <div className="mt-2 space-y-1">
+                                        <div className="mt-2 space-y-2">
                                         {group.items.map(item => (
                                             <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
-                                                <Label htmlFor={`check-${item.id}`} className="flex items-center gap-3 cursor-pointer">
+                                                <Label htmlFor={`check-${item.id}`} className="flex items-center gap-3 cursor-pointer w-full">
                                                     <Checkbox
                                                         id={`check-${item.id}`}
                                                         checked={currentModifiers[group.id]?.has(item.id)}

@@ -17,7 +17,6 @@ const syrupModifiers = {
     name: 'Сироп',
     type: 'multiple' as 'multiple',
     items: [
-        { id: 'no-syrup', name: 'Без сиропа', price: 0 },
         { id: 'vanilla', name: 'Ванильный', price: 40 },
         { id: 'caramel', name: 'Карамельный', price: 40 },
         { id: 'hazelnut', name: 'Ореховый', price: 40 },
