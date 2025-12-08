@@ -6,6 +6,8 @@ import { INITIAL_ORDERS, DRINKS } from '@/lib/data';
 import AppHeader from '@/components/app/header';
 import OrderBoard from '@/components/app/order-board';
 import { useToast } from '@/hooks/use-toast';
+import { prioritizeOrders } from '@/ai/ai-priority-reordering';
+import { type Order as AiOrder } from '@/ai/ai-priority-reordering';
 
 export default function Home() {
   const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
@@ -20,8 +22,8 @@ export default function Home() {
     };
     setOrders(prev => [order, ...prev]);
     toast({
-      title: 'Order Added',
-      description: `${order.customerName}'s order has been added to the queue.`,
+      title: 'Заказ добавлен',
+      description: `Заказ ${order.customerName} был добавлен в очередь.`,
     });
   }, [toast]);
 
@@ -35,38 +37,52 @@ export default function Home() {
     const order = orders.find(o => o.id === orderId);
     setOrders(prev => prev.filter(o => o.id !== orderId));
      toast({
-      title: 'Order Completed',
-      description: `${order?.customerName || 'An order'} has been served and removed.`,
+      title: 'Заказ выполнен',
+      description: `${order?.customerName || 'Заказ'} был подан и удален.`,
     });
   }, [toast, orders]);
 
-  const optimizeQueue = useCallback(() => {
-    // This is a mock for the AI-powered reordering tool.
-    // A real implementation would call a GenAI flow.
-    // This mock sorts by preparation time (shortest first).
-    setOrders(prev => {
-      const pendingOrders = prev.filter(o => o.status === 'pending');
-      const otherOrders = prev.filter(o => o.status !== 'pending');
+  const optimizeQueue = useCallback(async () => {
+    const pendingOrders = orders.filter(o => o.status === 'pending');
+    const otherOrders = orders.filter(o => o.status !== 'pending');
+    
+    const drinksMap = new Map(DRINKS.map(d => [d.id, d]));
+
+    const aiOrders: AiOrder[] = pendingOrders.map(order => ({
+      orderId: order.id,
+      items: [drinksMap.get(order.drinkId)?.name || 'Неизвестный напиток'],
+      prepTime: drinksMap.get(order.drinkId)?.prepTime || 5,
+      ingredients: [], // This can be enhanced if ingredient data is available
+      customerName: order.customerName,
+      orderTime: new Date(order.createdAt).toISOString(),
+    }));
+
+    try {
+      const { prioritizedOrderIds } = await prioritizeOrders(aiOrders);
       
-      const drinksMap = new Map(DRINKS.map(d => [d.id, d]));
+      const prioritizedMap = new Map(prioritizedOrderIds.map((id, index) => [id, index]));
       
       const sortedPending = [...pendingOrders].sort((a, b) => {
-        const prepTimeA = drinksMap.get(a.drinkId)?.prepTime || 99;
-        const prepTimeB = drinksMap.get(b.drinkId)?.prepTime || 99;
-        if (prepTimeA !== prepTimeB) {
-            return prepTimeA - prepTimeB;
-        }
-        return a.createdAt - b.createdAt; // secondary sort by time
+        const aPrio = prioritizedMap.get(a.id) ?? Infinity;
+        const bPrio = prioritizedMap.get(b.id) ?? Infinity;
+        return aPrio - bPrio;
       });
-      
-      return [...sortedPending, ...otherOrders];
-    });
-    
-    toast({
-      title: 'Queue Optimized!',
-      description: 'Pending orders have been re-sequenced for maximum efficiency.',
-    });
-  }, [toast]);
+
+      setOrders([...sortedPending, ...otherOrders]);
+
+      toast({
+        title: 'Очередь оптимизирована!',
+        description: 'Ожидающие заказы были пересортированы для максимальной эффективности.',
+      });
+    } catch (error) {
+      console.error("Failed to optimize queue:", error);
+      toast({
+        variant: "destructive",
+        title: "Ошибка оптимизации",
+        description: "Не удалось оптимизировать очередь. Пожалуйста, попробуйте еще раз.",
+      });
+    }
+  }, [orders, toast]);
   
   const sortedOrders = useMemo(() => {
     return [...orders].sort((a, b) => a.createdAt - b.createdAt);

@@ -12,7 +12,7 @@ export default function AppHeader({ addOrder }: AppHeaderProps) {
       <div className="flex items-center gap-3">
         <Coffee className="h-7 w-7 text-primary" />
         <h1 className="text-2xl font-bold tracking-tight text-primary font-headline">
-          BaristaTrack
+          БаристаТрек
         </h1>
       </div>
       <AddOrderDialog addOrder={addOrder} />

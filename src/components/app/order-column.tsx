@@ -13,9 +13,9 @@ interface OrderColumnProps {
 }
 
 const statusConfig = {
-  pending: { title: 'Pending', icon: Hourglass, iconColor: 'text-chart-4' },
-  'in-progress': { title: 'In Progress', icon: Loader2, iconColor: 'text-chart-1' },
-  ready: { title: 'Ready', icon: CheckCircle2, iconColor: 'text-chart-2' },
+  pending: { title: 'В ожидании', icon: Hourglass, iconColor: 'text-chart-4' },
+  'in-progress': { title: 'В процессе', icon: Loader2, iconColor: 'text-chart-1' },
+  ready: { title: 'Готово', icon: CheckCircle2, iconColor: 'text-chart-2' },
 };
 
 export default function OrderColumn({
@@ -42,7 +42,7 @@ export default function OrderColumn({
         {isOptimizable && (
           <Button variant="ghost" size="sm" onClick={optimizeQueue} className="text-accent-foreground bg-accent hover:bg-accent/90">
             <Wand2 className="mr-2 h-4 w-4" />
-            Optimize
+            Оптимизировать
           </Button>
         )}
       </div>
@@ -59,7 +59,7 @@ export default function OrderColumn({
             ))
           ) : (
             <div className="flex h-48 items-center justify-center rounded-lg border-2 border-dashed border-border">
-              <p className="text-sm text-muted-foreground">{`No ${config.title.toLowerCase()} orders.`}</p>
+              <p className="text-sm text-muted-foreground">{`Нет заказов в статусе "${config.title.toLowerCase()}".`}</p>
             </div>
           )}
         </div>

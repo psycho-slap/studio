@@ -37,9 +37,9 @@ import { DRINKS } from '@/lib/data';
 import type { Order } from '@/lib/types';
 
 const orderSchema = z.object({
-  customerName: z.string().min(2, 'Name must be at least 2 characters.').max(50, 'Name is too long.'),
-  drinkId: z.string({ required_error: 'Please select a drink.' }),
-  customizations: z.string().max(100, 'Customizations are too long.').optional(),
+  customerName: z.string().min(2, 'Имя должно содержать не менее 2 символов.').max(50, 'Имя слишком длинное.'),
+  drinkId: z.string({ required_error: 'Пожалуйста, выберите напиток.' }),
+  customizations: z.string().max(100, 'Дополнения слишком длинные.').optional(),
 });
 
 type OrderFormValues = z.infer<typeof orderSchema>;
@@ -70,14 +70,14 @@ export function AddOrderDialog({ addOrder }: AddOrderDialogProps) {
       <DialogTrigger asChild>
         <Button>
           <PlusCircle className="mr-2 h-4 w-4" />
-          Add Order
+          Добавить заказ
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>New Customer Order</DialogTitle>
+          <DialogTitle>Новый заказ клиента</DialogTitle>
           <DialogDescription>
-            Enter the details for the new order. Click place when you're done.
+            Введите детали нового заказа. Нажмите "Разместить", когда закончите.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -87,9 +87,9 @@ export function AddOrderDialog({ addOrder }: AddOrderDialogProps) {
               name="customerName"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Customer Name</FormLabel>
+                  <FormLabel>Имя клиента</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Jane Doe" {...field} />
+                    <Input placeholder="например, Анна Иванова" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -100,11 +100,11 @@ export function AddOrderDialog({ addOrder }: AddOrderDialogProps) {
               name="drinkId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Drink</FormLabel>
+                  <FormLabel>Напиток</FormLabel>
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a drink" />
+                        <SelectValue placeholder="Выберите напиток" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -124,10 +124,10 @@ export function AddOrderDialog({ addOrder }: AddOrderDialogProps) {
               name="customizations"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Customizations</FormLabel>
+                  <FormLabel>Дополнения</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder="e.g. Oat milk, extra shot, no sugar..."
+                      placeholder="например, овсяное молоко, дополнительный шот, без сахара..."
                       {...field}
                     />
                   </FormControl>
@@ -138,10 +138,10 @@ export function AddOrderDialog({ addOrder }: AddOrderDialogProps) {
             <DialogFooter className="pt-4">
               <DialogClose asChild>
                 <Button type="button" variant="secondary">
-                  Cancel
+                  Отмена
                 </Button>
               </DialogClose>
-              <Button type="submit">Place Order</Button>
+              <Button type="submit">Разместить заказ</Button>
             </DialogFooter>
           </form>
         </Form>
