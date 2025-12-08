@@ -25,7 +25,7 @@ export type Order = z.infer<typeof OrderSchema>;
 
 const PrioritizedOrdersOutputSchema = z.object({
   prioritizedOrderIds: z.array(z.string()).describe('The order IDs in the optimal preparation sequence.'),
-  reasoning: z.string().describe('The AI reasoning for the suggested order sequence.'),
+  reasoning: z.string().describe('The AI reasoning for the suggested order sequence, in Russian.'),
 });
 
 export type PrioritizedOrdersOutput = z.infer<typeof PrioritizedOrdersOutputSchema>;
@@ -38,7 +38,7 @@ const prompt = ai.definePrompt({
   name: 'prioritizeOrdersPrompt',
   input: {schema: z.array(OrderSchema)},
   output: {schema: PrioritizedOrdersOutputSchema},
-  prompt: `You are an expert barista assistant designed to optimize order preparation in a busy bar setting.
+  prompt: `You are an expert barista assistant designed to optimize order preparation in a busy bar setting. Your responses must be in Russian.
 
   Given the following list of orders, analyze their prep times, required ingredients, and order placement times to suggest the optimal sequence for preparation.
   The goal is to minimize overall customer wait times and ensure efficient use of resources.
@@ -59,7 +59,8 @@ const prompt = ai.definePrompt({
   - Orders sharing ingredients can be prepared in sequence to minimize ingredient handling.
   - The order in which customers placed their orders. First come, first served.
 
-  Based on your analysis, provide the optimal order preparation sequence (as an array of orderIds) and a brief explanation of your reasoning.
+  Based on your analysis, provide the optimal order preparation sequence (as an array of orderIds) and a brief explanation of your reasoning in Russian.
+  Your reasoning should be a single, concise sentence.
   Output only the JSON, do not include any prose before or after.`,
 });
 

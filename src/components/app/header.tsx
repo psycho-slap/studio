@@ -1,12 +1,8 @@
-import type { Order } from '@/lib/types';
-import { Coffee } from 'lucide-react';
-import { AddOrderDialog } from '@/components/app/add-order-dialog';
+import { Coffee, PlusCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
-interface AppHeaderProps {
-  addOrder: (order: Omit<Order, 'id' | 'status' | 'createdAt'>) => void;
-}
-
-export default function AppHeader({ addOrder }: AppHeaderProps) {
+export default function AppHeader() {
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b bg-card px-4 shadow-sm md:px-6">
       <div className="flex items-center gap-3">
@@ -15,7 +11,12 @@ export default function AppHeader({ addOrder }: AppHeaderProps) {
           БаристаТрек
         </h1>
       </div>
-      <AddOrderDialog addOrder={addOrder} />
+      <Button asChild>
+        <Link href="/add-order">
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Добавить заказ
+        </Link>
+      </Button>
     </header>
   );
 }

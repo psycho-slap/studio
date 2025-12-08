@@ -39,7 +39,7 @@ export default function OrderColumn({
             {orders.length}
           </span>
         </div>
-        {isOptimizable && (
+        {isOptimizable && orders.length > 1 && (
           <Button variant="ghost" size="sm" onClick={optimizeQueue} className="text-accent-foreground bg-accent hover:bg-accent/90">
             <Wand2 className="mr-2 h-4 w-4" />
             Оптимизировать
