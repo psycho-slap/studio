@@ -3,28 +3,26 @@
 import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/hooks/use-toast';
 import Link from 'next/link';
-import { ArrowLeft, CreditCard, Landmark, Plus, Trash2, X } from 'lucide-react';
+import { ArrowLeft, CreditCard, Landmark, Plus, Trash2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import type { Order, OrderItem, Drink, Modifier } from '@/lib/types';
+import type { Order, OrderItem, Drink, ModifierGroup, Modifier } from '@/lib/types';
 import { DRINKS } from '@/lib/data';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogClose,
   DialogFooter
 } from "@/components/ui/dialog"
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
-type Step = 'selection' | 'payment';
 type PaymentMethod = 'card' | 'cash';
 
 const playNotificationSound = () => {
@@ -46,16 +44,18 @@ const DrinkCategories = DRINKS.reduce((acc, drink) => {
 
 
 export default function AddOrderPage() {
-  const { toast } = useToast();
-  const [step, setStep] = useState<Step>('selection');
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
-  const [customerName, setCustomerName] = useState('');
+  const [loyaltyPhoneNumber, setLoyaltyPhoneNumber] = useState('');
+  
+  // Payment Dialog State
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('card');
   const [cashReceived, setCashReceived] = useState<number | null>(null);
 
+  // Modifier Dialog State
   const [isModifierDialogOpen, setIsModifierDialogOpen] = useState(false);
   const [selectedDrink, setSelectedDrink] = useState<Drink | null>(null);
-  const [currentModifiers, setCurrentModifiers] = useState<Record<string, string>>({});
+  const [currentModifiers, setCurrentModifiers] = useState<Record<string, Set<string>>>({});
 
 
   const totalPrice = useMemo(() => {
@@ -72,10 +72,15 @@ export default function AddOrderPage() {
   const handleDrinkSelect = (drink: Drink) => {
     setSelectedDrink(drink);
     
-    const defaultModifiers: Record<string, string> = {};
+    const defaultModifiers: Record<string, Set<string>> = {};
     drink.modifiers.forEach(group => {
       if(group.items.length > 0) {
-        defaultModifiers[group.id] = group.items[0].id;
+        // For single selection, select the first one by default. For multiple, none are selected.
+        if (group.type === 'single') {
+            defaultModifiers[group.id] = new Set([group.items[0].id]);
+        } else {
+            defaultModifiers[group.id] = new Set();
+        }
       }
     });
     setCurrentModifiers(defaultModifiers);
@@ -89,19 +94,25 @@ export default function AddOrderPage() {
       let finalPrice = selectedDrink.price;
       const customizations: string[] = [];
 
-      Object.entries(currentModifiers).forEach(([groupId, modifierId]) => {
+      Object.entries(currentModifiers).forEach(([groupId, modifierIds]) => {
           const group = selectedDrink.modifiers.find(g => g.id === groupId);
-          const modifier = group?.items.find(i => i.id === modifierId);
-          if (modifier && modifier.price > 0) {
-              finalPrice += modifier.price;
-              customizations.push(modifier.name);
-          } else if (modifier && group?.items[0].id !== modifier.id) {
-              customizations.push(modifier.name)
-          }
+          if (!group) return;
+
+          modifierIds.forEach(modifierId => {
+             const modifier = group.items.find(i => i.id === modifierId);
+              if (modifier && modifier.price > 0) {
+                  finalPrice += modifier.price;
+                  customizations.push(modifier.name);
+              } else if (modifier && group.type === 'single' && group.items[0].id !== modifier.id) {
+                  customizations.push(modifier.name)
+              } else if (modifier && group.type === 'multiple') {
+                  customizations.push(modifier.name);
+              }
+          })
       })
 
       const newItem: OrderItem = {
-          id: selectedDrink.id,
+          id: `${selectedDrink.id}-${Date.now()}`,
           name: selectedDrink.name,
           price: selectedDrink.price,
           customizations: customizations.join(', '),
@@ -114,39 +125,40 @@ export default function AddOrderPage() {
       setCurrentModifiers({});
   }
 
-  const handleRemoveItem = (index: number) => {
-    setOrderItems(prev => prev.filter((_, i) => i !== index));
+  const handleModifierChange = (groupId: string, modifierId: string, groupType: 'single' | 'multiple') => {
+      setCurrentModifiers(prev => {
+          const newModifiers = { ...prev };
+          if (groupType === 'single') {
+              newModifiers[groupId] = new Set([modifierId]);
+          } else {
+              const currentSet = new Set(newModifiers[groupId] || []);
+              if (currentSet.has(modifierId)) {
+                  currentSet.delete(modifierId);
+              } else {
+                  currentSet.add(modifierId);
+              }
+              newModifiers[groupId] = currentSet;
+          }
+          return newModifiers;
+      })
+  }
+
+  const handleRemoveItem = (itemId: string) => {
+    setOrderItems(prev => prev.filter((item) => item.id !== itemId));
   }
 
   const resetOrder = () => {
     setOrderItems([]);
-    setCustomerName('');
+    setLoyaltyPhoneNumber('');
     setPaymentMethod('card');
     setCashReceived(null);
-    setStep('selection');
+    setIsPaymentDialogOpen(false);
   }
 
-  function handleFinalizeOrder() {
-    if (orderItems.length === 0) {
-        toast({
-            variant: "destructive",
-            title: "Пустой заказ",
-            description: "Пожалуйста, добавьте хотя бы один напиток.",
-        });
-        return;
-    }
-     if (!customerName) {
-        toast({
-            variant: "destructive",
-            title: "Нет имени клиента",
-            description: "Пожалуйста, введите имя клиента.",
-        });
-        return;
-    }
-
+  const handleFinalizeOrder = () => {
     const newOrder: Order = {
         id: `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        customerName: customerName,
+        customerName: loyaltyPhoneNumber ? `Loyalty: ${loyaltyPhoneNumber}` : 'Гость',
         items: orderItems,
         status: 'готовится',
         createdAt: Date.now(),
@@ -160,19 +172,10 @@ export default function AddOrderPage() {
         localStorage.setItem('orders', JSON.stringify(updatedOrders));
         
         playNotificationSound();
-
-        toast({
-            title: 'Заказ успешно создан',
-            description: `Заказ для ${customerName} на сумму ${totalPrice} руб.`,
-        });
         resetOrder();
     } catch (error) {
         console.error("Failed to save order to localStorage:", error);
-        toast({
-            variant: "destructive",
-            title: "Ошибка",
-            description: "Не удалось сохранить заказ. Пожалуйста, попробуйте еще раз.",
-        });
+        // Maybe show a toast here if saving fails
     }
   }
 
@@ -194,7 +197,7 @@ export default function AddOrderPage() {
       
       <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0">
         {/* Step 1: Selection */}
-        <div className={cn("p-4 md:p-6 overflow-y-auto md:col-span-2", step === 'payment' && 'hidden md:block')}>
+        <div className="p-4 md:p-6 overflow-y-auto md:col-span-2">
             <h2 className="text-2xl font-bold font-headline mb-4">Ассортимент</h2>
             {Object.entries(DrinkCategories).map(([category, drinks]) => (
                 <div key={category} className="mb-6">
@@ -221,16 +224,16 @@ export default function AddOrderPage() {
            <div className="flex-1 overflow-y-auto">
              <h2 className="text-2xl font-bold font-headline mb-1">Текущий заказ</h2>
              <Input 
-                placeholder="Имя клиента"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
+                placeholder="Номер телефона (лояльность)"
+                value={loyaltyPhoneNumber}
+                onChange={(e) => setLoyaltyPhoneNumber(e.target.value)}
                 className="mb-4 mt-2"
               />
 
             {orderItems.length > 0 ? (
                 <div className="space-y-3">
-                    {orderItems.map((item, index) => (
-                        <Card key={index} className="p-3">
+                    {orderItems.map((item) => (
+                        <Card key={item.id} className="p-3">
                             <div className="flex justify-between items-start">
                                 <div>
                                     <p className="font-semibold">{item.name}</p>
@@ -238,7 +241,7 @@ export default function AddOrderPage() {
                                 </div>
                                 <div className="text-right">
                                     <p className="font-semibold">{item.finalPrice} руб.</p>
-                                    <button onClick={() => handleRemoveItem(index)} className="text-destructive hover:text-destructive/80">
+                                    <button onClick={() => handleRemoveItem(item.id)} className="text-destructive hover:text-destructive/80 mt-1">
                                         <Trash2 className="h-4 w-4"/>
                                     </button>
                                 </div>
@@ -261,48 +264,9 @@ export default function AddOrderPage() {
                     <span>Итого:</span>
                     <span>{totalPrice} руб.</span>
                 </div>
-                {step === 'selection' ? (
-                     <Button size="lg" className="w-full" onClick={() => setStep('payment')} disabled={orderItems.length === 0}>
-                        К оплате
-                    </Button>
-                ) : (
-                    <div className="space-y-4">
-                         <div>
-                            <Label className="mb-2 block">Способ оплаты</Label>
-                            <div className="grid grid-cols-2 gap-2">
-                            <Button type="button" variant={paymentMethod === 'card' ? 'default' : 'secondary'} onClick={() => setPaymentMethod('card')}>
-                                <CreditCard /> Карта
-                            </Button>
-                            <Button type="button" variant={paymentMethod === 'cash' ? 'default' : 'secondary'} onClick={() => setPaymentMethod('cash')}>
-                                <Landmark /> Наличные
-                            </Button>
-                            </div>
-                        </div>
-
-                        {paymentMethod === 'cash' && (
-                            <div>
-                                <Label htmlFor="cash-received">Принято наличными</Label>
-                                <Input
-                                    id="cash-received"
-                                    type="number"
-                                    placeholder="Например, 500"
-                                    value={cashReceived ?? ''}
-                                    onChange={(e) => setCashReceived(e.target.value ? Number(e.target.value) : null)}
-                                />
-                                {change !== null && (
-                                    <p className="mt-2 text-lg font-semibold text-primary">Сдача: {change} руб.</p>
-                                )}
-                            </div>
-                        )}
-                        
-                        <div className="flex gap-2">
-                             <Button variant="outline" className="w-full" onClick={() => setStep('selection')}>Назад</Button>
-                             <Button size="lg" className="w-full" onClick={handleFinalizeOrder} disabled={paymentMethod === 'cash' && (cashReceived === null || cashReceived < totalPrice)}>
-                                Оплатить
-                            </Button>
-                        </div>
-                    </div>
-                )}
+                <Button size="lg" className="w-full" onClick={() => setIsPaymentDialogOpen(true)} disabled={orderItems.length === 0}>
+                    К оплате
+                </Button>
                  <Button variant="ghost" size="sm" className="w-full text-destructive" onClick={resetOrder}>
                     Сбросить заказ
                 </Button>
@@ -311,36 +275,121 @@ export default function AddOrderPage() {
 
         {/* Modifier Dialog */}
         <Dialog open={isModifierDialogOpen} onOpenChange={setIsModifierDialogOpen}>
-            <DialogContent>
+            <DialogContent className="max-h-[90dvh] flex flex-col">
                 <DialogHeader>
                 <DialogTitle>Настроить «{selectedDrink?.name}»</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
-                    {selectedDrink?.modifiers.map(group => (
-                        <div key={group.id}>
-                            <Label className="text-base">{group.name}</Label>
-                            <RadioGroup 
-                                value={currentModifiers[group.id]}
-                                onValueChange={(value) => setCurrentModifiers(prev => ({ ...prev, [group.id]: value }))}
-                                className="mt-2 space-y-1"
-                            >
-                                {group.items.map(item => (
-                                    <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
-                                        <Label htmlFor={item.id} className="flex items-center gap-3 cursor-pointer">
-                                            <RadioGroupItem value={item.id} id={item.id} />
-                                            {item.name}
-                                        </Label>
-                                        {item.price > 0 && <Badge variant="secondary">+{item.price} руб.</Badge>}
+                <ScrollArea className="flex-1">
+                    <div className="space-y-4 pr-6">
+                        {selectedDrink?.modifiers.map(group => (
+                            <div key={group.id}>
+                                <Label className="text-base">{group.name}</Label>
+                                {group.type === 'single' ? (
+                                    <RadioGroup 
+                                        value={Array.from(currentModifiers[group.id] || [])[0]}
+                                        onValueChange={(value) => handleModifierChange(group.id, value, group.type)}
+                                        className="mt-2 space-y-1"
+                                    >
+                                        {group.items.map(item => (
+                                            <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
+                                                <Label htmlFor={`radio-${item.id}`} className="flex items-center gap-3 cursor-pointer">
+                                                    <RadioGroupItem value={item.id} id={`radio-${item.id}`} />
+                                                    {item.name}
+                                                </Label>
+                                                {item.price > 0 && <Badge variant="secondary">+{item.price} руб.</Badge>}
+                                            </div>
+                                        ))}
+                                    </RadioGroup>
+                                ) : (
+                                    <div className="mt-2 space-y-1">
+                                    {group.items.map(item => (
+                                        <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
+                                            <Label htmlFor={`check-${item.id}`} className="flex items-center gap-3 cursor-pointer">
+                                                <Checkbox
+                                                    id={`check-${item.id}`}
+                                                    checked={currentModifiers[group.id]?.has(item.id)}
+                                                    onCheckedChange={() => handleModifierChange(group.id, item.id, group.type)}
+                                                />
+                                                {item.name}
+                                            </Label>
+                                            {item.price > 0 && <Badge variant="secondary">+{item.price} руб.</Badge>}
+                                        </div>
+                                    ))}
                                     </div>
-                                ))}
-                            </RadioGroup>
-                        </div>
-                    ))}
-                </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </ScrollArea>
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => setIsModifierDialogOpen(false)}>Отмена</Button>
                     <Button onClick={handleAddDrinkToOrder}>
                         <Plus className="mr-2"/> Добавить в заказ
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
+        {/* Payment Dialog */}
+        <Dialog open={isPaymentDialogOpen} onOpenChange={setIsPaymentDialogOpen}>
+            <DialogContent className="max-h-[90dvh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Оплата заказа</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 space-y-4">
+                    <Card>
+                        <CardContent className="p-4 space-y-2">
+                             <h3 className="font-semibold">Чек</h3>
+                             <ScrollArea className="h-40">
+                                <div className="space-y-1 pr-4">
+                                {orderItems.map(item => (
+                                    <div key={item.id} className="flex justify-between text-sm">
+                                        <span>{item.name}{item.customizations ? ` (${item.customizations})` : ''}</span>
+                                        <span>{item.finalPrice} руб.</span>
+                                    </div>
+                                ))}
+                                </div>
+                             </ScrollArea>
+                             <Separator />
+                             <div className="flex justify-between font-bold text-lg">
+                                 <span>Итого:</span>
+                                 <span>{totalPrice} руб.</span>
+                             </div>
+                        </CardContent>
+                    </Card>
+
+                    <div>
+                        <Label className="mb-2 block">Способ оплаты</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                        <Button type="button" variant={paymentMethod === 'card' ? 'default' : 'secondary'} onClick={() => setPaymentMethod('card')}>
+                            <CreditCard /> Карта
+                        </Button>
+                        <Button type="button" variant={paymentMethod === 'cash' ? 'default' : 'secondary'} onClick={() => setPaymentMethod('cash')}>
+                            <Landmark /> Наличные
+                        </Button>
+                        </div>
+                    </div>
+
+                    {paymentMethod === 'cash' && (
+                        <div>
+                            <Label htmlFor="cash-received">Принято наличными</Label>
+                            <Input
+                                id="cash-received"
+                                type="number"
+                                placeholder="Например, 500"
+                                value={cashReceived ?? ''}
+                                onChange={(e) => setCashReceived(e.target.value ? Number(e.target.value) : null)}
+                            />
+                            {change !== null && (
+                                <p className="mt-2 text-lg font-semibold text-primary">Сдача: {change} руб.</p>
+                            )}
+                        </div>
+                    )}
+                </div>
+                <DialogFooter>
+                    <Button variant="ghost" onClick={() => setIsPaymentDialogOpen(false)}>Назад</Button>
+                    <Button size="lg" onClick={handleFinalizeOrder} disabled={paymentMethod === 'cash' && (cashReceived === null || cashReceived < totalPrice)}>
+                        Оплатить
                     </Button>
                 </DialogFooter>
             </DialogContent>

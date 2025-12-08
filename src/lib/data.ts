@@ -3,6 +3,7 @@ import type { Drink, Order } from './types';
 const milkModifiers = {
     id: 'milk',
     name: 'Молоко',
+    type: 'single' as 'single',
     items: [
         { id: 'whole-milk', name: 'Обычное молоко', price: 0 },
         { id: 'oat-milk', name: 'Овсяное молоко', price: 50 },
@@ -14,6 +15,7 @@ const milkModifiers = {
 const syrupModifiers = {
     id: 'syrup',
     name: 'Сироп',
+    type: 'multiple' as 'multiple',
     items: [
         { id: 'no-syrup', name: 'Без сиропа', price: 0 },
         { id: 'vanilla', name: 'Ванильный', price: 40 },
@@ -25,8 +27,8 @@ const syrupModifiers = {
 const extrasModifiers = {
     id: 'extras',
     name: 'Добавки',
+    type: 'multiple' as 'multiple',
     items: [
-        { id: 'no-extras', name: 'Ничего', price: 0 },
         { id: 'extra-shot', name: 'Доп. шот эспрессо', price: 70 },
         { id: 'cinnamon', name: 'Корица', price: 20 },
         { id: 'whipped-cream', name: 'Взбитые сливки', price: 60 },

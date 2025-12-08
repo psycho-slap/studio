@@ -5,11 +5,9 @@ import type { Order } from '@/lib/types';
 import { INITIAL_ORDERS } from '@/lib/data';
 import AppHeader from '@/components/app/header';
 import OrderCard from '@/components/app/order-card';
-import { useToast } from '@/hooks/use-toast';
 
 export default function Home() {
   const [orders, setOrders] = useState<Order[]>([]);
-  const { toast } = useToast();
   const [isInitialized, setIsInitialized] = useState(false);
 
   const updateOrders = useCallback((newOrders: Order[]) => {
@@ -47,14 +45,6 @@ export default function Home() {
       if (event.key === 'orders' && event.newValue) {
         try {
           const newOrders = JSON.parse(event.newValue);
-          const newPreparingOrder = newOrders.find((newOrder: Order) => 
-            !orders.some((oldOrder: Order) => oldOrder.id === newOrder.id) && newOrder.status === 'готовится'
-          );
-
-          if (newPreparingOrder) {
-            // Logic to handle new order, e.g. play sound, is now in add-order page
-          }
-
           setOrders(newOrders.sort((a: Order, b: Order) => a.createdAt - b.createdAt));
         } catch (error) {
           console.error("Could not parse orders from storage event:", error);
@@ -67,7 +57,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [orders]);
+  }, []);
 
 
   const completeOrder = useCallback((orderId: string) => {

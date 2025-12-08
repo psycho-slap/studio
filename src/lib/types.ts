@@ -10,6 +10,7 @@ export interface Modifier {
 export interface ModifierGroup {
     id: string;
     name: string;
+    type: 'single' | 'multiple';
     items: Modifier[];
 }
 
@@ -23,10 +24,10 @@ export interface Drink {
 }
 
 export interface OrderItem {
-    id: string; // drinkId
+    id: string; // unique item id
     name: string;
     price: number;
-    customizations: string; // e.g., "Oat Milk, 1 Sugar"
+    customizations: string; // e.g., "Oat Milk, Vanilla"
     finalPrice: number;
 }
 
