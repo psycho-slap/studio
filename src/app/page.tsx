@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { Order, OrderStatus } from '@/lib/types';
 import { INITIAL_ORDERS, DRINKS } from '@/lib/data';
 import AppHeader from '@/components/app/header';
@@ -17,21 +17,43 @@ export default function Home() {
 
   useEffect(() => {
     // This effect runs once on the client to initialize orders from localStorage
-    try {
-      const storedOrders = localStorage.getItem('orders');
-      if (storedOrders) {
-        setOrders(JSON.parse(storedOrders));
-      } else {
-        // If nothing in localStorage, use initial data and set it
+    const initializeOrders = () => {
+      try {
+        const storedOrders = localStorage.getItem('orders');
+        if (storedOrders) {
+          setOrders(JSON.parse(storedOrders));
+        } else {
+          // If nothing in localStorage, use initial data and set it
+          setOrders(INITIAL_ORDERS);
+          localStorage.setItem('orders', JSON.stringify(INITIAL_ORDERS));
+        }
+      } catch (error) {
+        // If parsing fails, fall back to initial orders
+        console.error("Could not parse orders from localStorage:", error);
         setOrders(INITIAL_ORDERS);
-        localStorage.setItem('orders', JSON.stringify(INITIAL_ORDERS));
       }
-    } catch (error) {
-      // If parsing fails, fall back to initial orders
-      console.error("Could not parse orders from localStorage:", error);
-      setOrders(INITIAL_ORDERS);
-    }
-    setIsInitialized(true);
+      setIsInitialized(true);
+    };
+
+    initializeOrders();
+    
+    // Listen for storage changes from other tabs
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'orders' && event.newValue) {
+        try {
+          setOrders(JSON.parse(event.newValue));
+        } catch (error) {
+          console.error("Could not parse orders from storage event:", error);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+
   }, []);
 
   useEffect(() => {
