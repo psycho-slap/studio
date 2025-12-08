@@ -7,25 +7,13 @@ import AppHeader from '@/components/app/header';
 import OrderCard from '@/components/app/order-card';
 import { useToast } from '@/hooks/use-toast';
 
-const playNotificationSound = () => {
-    try {
-        const audio = new Audio('/notification.mp3');
-        audio.play();
-    } catch (error) {
-        console.error("Could not play notification sound:", error);
-    }
-}
-
 export default function Home() {
   const [orders, setOrders] = useState<Order[]>([]);
   const { toast } = useToast();
   const [isInitialized, setIsInitialized] = useState(false);
 
-  const updateOrders = useCallback((newOrders: Order[], playSound: boolean = false) => {
+  const updateOrders = useCallback((newOrders: Order[]) => {
     try {
-      if (playSound) {
-        playNotificationSound();
-      }
       const sortedOrders = newOrders.sort((a, b) => a.createdAt - b.createdAt);
       setOrders(sortedOrders);
       localStorage.setItem('orders', JSON.stringify(sortedOrders));
@@ -58,10 +46,7 @@ export default function Home() {
       if (event.key === 'orders' && event.newValue) {
         try {
           const newOrders = JSON.parse(event.newValue);
-          const oldOrderCount = orders.length;
-          const newOrderCount = newOrders.length;
-          // Play sound only if a new order was added
-          updateOrders(newOrders, newOrderCount > oldOrderCount);
+          updateOrders(newOrders);
         } catch (error) {
           console.error("Could not parse orders from storage event:", error);
         }
@@ -73,7 +58,7 @@ export default function Home() {
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [orders, updateOrders]);
+  }, [updateOrders]);
 
 
   const completeOrder = useCallback((orderId: string) => {
