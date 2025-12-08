@@ -62,17 +62,24 @@ service cloud.firestore {
      *              can create, view, and manage any customer record.
      */
     match /customers/{customerId} {
-      allow get, list, create, update, delete: if isSignedIn();
+      allow read, write: if isSignedIn();
     }
 
     /**
      * @description Manages all orders. Any authenticated user can manage any order.
      */
     match /orders/{orderId} {
-       allow get, list: if isSignedIn();
+       allow get: if isSignedIn();
        allow create: if isSignedIn() && hasValidOrderDataOnCreate(orderId);
        allow update: if canModifyExistingDoc() && orderDataIsImmutable();
        allow delete: if canModifyExistingDoc();
+    }
+    
+    /**
+     * @description Allows listing all orders for dashboards and trackers.
+     */
+    match /orders {
+        allow list: if isSignedIn();
     }
   }
 }
