@@ -1,0 +1,118 @@
+{
+  "entities": {
+    "Order": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Order",
+      "type": "object",
+      "description": "Represents a customer order at the bar.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the order."
+        },
+        "orderTime": {
+          "type": "string",
+          "description": "The date and time the order was placed.",
+          "format": "date-time"
+        },
+        "status": {
+          "type": "string",
+          "description": "The current status of the order (e.g., 'pending', 'in progress', 'ready')."
+        },
+        "items": {
+          "type": "array",
+          "description": "A list of items in the order.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to Customer. (Relationship: Customer 1:N Order)"
+        }
+      },
+      "required": [
+        "id",
+        "orderTime",
+        "status",
+        "items",
+        "customerId"
+      ]
+    },
+    "Customer": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Customer",
+      "type": "object",
+      "description": "Represents a customer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the customer."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The customer's phone number."
+        },
+        "name": {
+          "type": "string",
+          "description": "The customer's name."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes about the customer."
+        }
+      },
+      "required": [
+        "id",
+        "phoneNumber"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/customers/{customerId}",
+        "definition": {
+          "entityName": "Customer",
+          "schema": {
+            "$ref": "#/backend/entities/Customer"
+          },
+          "description": "Stores customer information, using the customerId as the document ID. Allows baristas to create and edit customer cards.",
+          "params": [
+            {
+              "name": "customerId",
+              "description": "Unique identifier for the customer. This is derived from the customer's phone number."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/customers/{customerId}/orders/{orderId}",
+        "definition": {
+          "entityName": "Order",
+          "schema": {
+            "$ref": "#/backend/entities/Order"
+          },
+          "description": "Stores order information for each customer. Includes the customerId to maintain the relationship between customers and orders.",
+          "params": [
+            {
+              "name": "customerId",
+              "description": "Unique identifier for the customer. This is derived from the customer's phone number."
+            },
+            {
+              "name": "orderId",
+              "description": "Unique identifier for the order."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to manage customer and order data for the BaristaTrack application. It prioritizes authorization independence by using path-based ownership for customer data and referencing customer data in the order data.  This design supports secure `list` operations (QAPs) by segregating customer and order data. Because the application requires the ability to track guest information based on phone number, and allow baristas to create and modify this guest information, we store the Customers outside of the `/users/{userId}` path, using the `phoneNumber` as the document id. Orders are stored at `/customers/{customerId}/orders/{orderId}`. This structure enables simple security rules that grant access based on customer ID. All writes will be performed by authenticated users, and therefore any authorization checks can be performed on the `request.auth.uid` field."
+  }
+}
