@@ -175,7 +175,6 @@ export default function AddOrderPage() {
         resetOrder();
     } catch (error) {
         console.error("Failed to save order to localStorage:", error);
-        // Maybe show a toast here if saving fails
     }
   }
 
@@ -279,48 +278,50 @@ export default function AddOrderPage() {
                 <DialogHeader>
                 <DialogTitle>Настроить «{selectedDrink?.name}»</DialogTitle>
                 </DialogHeader>
-                <ScrollArea className="flex-1">
-                    <div className="space-y-4 pr-6">
-                        {selectedDrink?.modifiers.map(group => (
-                            <div key={group.id}>
-                                <Label className="text-base">{group.name}</Label>
-                                {group.type === 'single' ? (
-                                    <RadioGroup 
-                                        value={Array.from(currentModifiers[group.id] || [])[0]}
-                                        onValueChange={(value) => handleModifierChange(group.id, value, group.type)}
-                                        className="mt-2 space-y-1"
-                                    >
+                <div className="flex-1 min-h-0">
+                    <ScrollArea className="h-full">
+                        <div className="space-y-4 pr-6">
+                            {selectedDrink?.modifiers.map(group => (
+                                <div key={group.id}>
+                                    <Label className="text-base">{group.name}</Label>
+                                    {group.type === 'single' ? (
+                                        <RadioGroup 
+                                            value={Array.from(currentModifiers[group.id] || [])[0]}
+                                            onValueChange={(value) => handleModifierChange(group.id, value, group.type)}
+                                            className="mt-2 space-y-1"
+                                        >
+                                            {group.items.map(item => (
+                                                <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
+                                                    <Label htmlFor={`radio-${item.id}`} className="flex items-center gap-3 cursor-pointer">
+                                                        <RadioGroupItem value={item.id} id={`radio-${item.id}`} />
+                                                        {item.name}
+                                                    </Label>
+                                                    {item.price > 0 && <Badge variant="secondary">+{item.price} руб.</Badge>}
+                                                </div>
+                                            ))}
+                                        </RadioGroup>
+                                    ) : (
+                                        <div className="mt-2 space-y-1">
                                         {group.items.map(item => (
                                             <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
-                                                <Label htmlFor={`radio-${item.id}`} className="flex items-center gap-3 cursor-pointer">
-                                                    <RadioGroupItem value={item.id} id={`radio-${item.id}`} />
+                                                <Label htmlFor={`check-${item.id}`} className="flex items-center gap-3 cursor-pointer">
+                                                    <Checkbox
+                                                        id={`check-${item.id}`}
+                                                        checked={currentModifiers[group.id]?.has(item.id)}
+                                                        onCheckedChange={() => handleModifierChange(group.id, item.id, group.type)}
+                                                    />
                                                     {item.name}
                                                 </Label>
                                                 {item.price > 0 && <Badge variant="secondary">+{item.price} руб.</Badge>}
                                             </div>
                                         ))}
-                                    </RadioGroup>
-                                ) : (
-                                    <div className="mt-2 space-y-1">
-                                    {group.items.map(item => (
-                                        <div key={item.id} className="flex items-center justify-between rounded-md border p-3">
-                                            <Label htmlFor={`check-${item.id}`} className="flex items-center gap-3 cursor-pointer">
-                                                <Checkbox
-                                                    id={`check-${item.id}`}
-                                                    checked={currentModifiers[group.id]?.has(item.id)}
-                                                    onCheckedChange={() => handleModifierChange(group.id, item.id, group.type)}
-                                                />
-                                                {item.name}
-                                            </Label>
-                                            {item.price > 0 && <Badge variant="secondary">+{item.price} руб.</Badge>}
                                         </div>
-                                    ))}
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </ScrollArea>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                </div>
                 <DialogFooter>
                     <Button variant="ghost" onClick={() => setIsModifierDialogOpen(false)}>Отмена</Button>
                     <Button onClick={handleAddDrinkToOrder}>
