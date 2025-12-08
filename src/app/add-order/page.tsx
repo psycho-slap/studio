@@ -182,13 +182,16 @@ export default function AddOrderPage() {
     const newOrder: Order = {
         id: orderId,
         customerName: selectedCustomer ? selectedCustomer.name : 'Гость',
-        customerId: selectedCustomer ? selectedCustomer.id : undefined,
         items: orderItems,
         status: 'готовится',
         createdAt: Date.now(),
         totalPrice: totalPrice,
         paymentMethod: paymentMethod,
     };
+    
+    if (selectedCustomer) {
+        newOrder.customerId = selectedCustomer.id;
+    }
     
     const orderRef = doc(firestore, 'orders', orderId);
     
@@ -462,3 +465,5 @@ export default function AddOrderPage() {
     </div>
   );
 }
+
+    
