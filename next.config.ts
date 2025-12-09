@@ -1,6 +1,40 @@
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
+  async redirects() {
+    return [
+      {
+        source: '/dashboard',
+        destination: '/su/lk',
+        permanent: true,
+      },
+      {
+        source: '/app/tracker',
+        destination: '/su/app/tracker',
+        permanent: true,
+      },
+      {
+        source: '/app/add-order',
+        destination: '/su/app/add-order',
+        permanent: true,
+      },
+      {
+        source: '/app/customers',
+        destination: '/su/app/customers',
+        permanent: true,
+      },
+      {
+        source: '/app/customers/:path*',
+        destination: '/su/app/customers/:path*',
+        permanent: true,
+      },
+       {
+        source: '/app/completed',
+        destination: '/su/app/completed',
+        permanent: true,
+      },
+    ]
+  },
   /* config options here */
   typescript: {
     ignoreBuildErrors: true,
