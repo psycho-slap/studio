@@ -148,6 +148,7 @@ export default function AddOrderPage() {
         price: selectedDrink.price,
         customizations: customizations.join(', '),
         finalPrice: finalPrice,
+        isReady: false, // Initialize as not ready
     };
     
     setOrderItems(prev => [...prev, newItem]);
@@ -223,6 +224,7 @@ export default function AddOrderPage() {
             price: randomDrink.price,
             customizations: '',
             finalPrice: randomDrink.price,
+            isReady: false,
         };
         orderItems.push(newItem);
         totalPrice += newItem.finalPrice;

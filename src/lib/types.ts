@@ -32,6 +32,7 @@ export interface OrderItem {
     price: number;
     customizations: string; // e.g., "Oat Milk, Vanilla"
     finalPrice: number;
+    isReady?: boolean; // New field for readiness status
 }
 
 export interface Order {
