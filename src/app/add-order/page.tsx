@@ -31,16 +31,6 @@ import { Check as CheckIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
-const playNotificationSound = () => {
-  try {
-    const audio = new Audio('/notification.mp3');
-    audio.play().catch(e => console.error("Error playing notification sound:", e));
-  } catch (error) {
-    console.error("Could not play notification sound:", error);
-  }
-};
-
-
 const DrinkCategories = DRINKS.reduce((acc, drink) => {
   if (!acc[drink.category]) {
     acc[drink.category] = [];
@@ -205,7 +195,6 @@ export default function AddOrderPage() {
     
     setDocumentNonBlocking(orderRef, newOrder, {});
 
-    // playNotificationSound();
     resetOrder();
     setIsPaymentOpen(false);
   };
@@ -473,5 +462,7 @@ export default function AddOrderPage() {
     </div>
   );
 }
+
+    
 
     

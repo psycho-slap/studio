@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Order } from '@/lib/types';
 import AppHeader from '@/components/app/header';
 import OrderCard from '@/components/app/order-card';
@@ -9,6 +9,16 @@ import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import { Loader2 } from 'lucide-react';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+
+const playNotificationSound = () => {
+  try {
+    const audio = new Audio('/notification.mp3');
+    audio.play().catch(e => console.error("Error playing notification sound:", e));
+  } catch (error) {
+    console.error("Could not play notification sound:", error);
+  }
+};
+
 
 export default function Home() {
   const { user, isUserLoading } = useUser();
@@ -31,6 +41,30 @@ export default function Home() {
 
   const { data: orders, isLoading: areOrdersLoading } = useCollection<Order>(ordersQuery);
 
+  const prevOrdersRef = useRef<Order[] | null>(null);
+
+  useEffect(() => {
+    if (areOrdersLoading || !orders) {
+      return;
+    }
+
+    const prevPreparingOrders = prevOrdersRef.current
+      ? prevOrdersRef.current.filter(o => o.status === 'готовится')
+      : [];
+
+    const currentPreparingOrders = orders.filter(o => o.status === 'готовится');
+
+    if (
+      prevOrdersRef.current !== null && // Don't play on initial load
+      currentPreparingOrders.length > prevPreparingOrders.length
+    ) {
+      playNotificationSound();
+    }
+
+    prevOrdersRef.current = orders;
+  }, [orders, areOrdersLoading]);
+
+
   const completeOrder = useCallback((orderId: string) => {
     if (!firestore) return;
     const orderRef = doc(firestore, 'orders', orderId);
@@ -50,6 +84,20 @@ export default function Home() {
             </div>
             <p className="mt-4 text-muted-foreground">Загрузка заказов и авторизация...</p>
         </div>
+    );
+  }
+  
+  if (!user) {
+    return (
+      <div className="flex h-dvh w-full flex-col items-center justify-center bg-background p-4 text-center">
+        <h1 className="text-2xl font-bold text-destructive">Доступ запрещен</h1>
+        <p className="mt-2 text-muted-foreground">
+          Для просмотра этой страницы необходимо войти в систему.
+        </p>
+        <Button onClick={() => initiateAnonymousSignIn(auth)} className="mt-4">
+          Войти как сотрудник
+        </Button>
+      </div>
     );
   }
 
@@ -81,3 +129,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
