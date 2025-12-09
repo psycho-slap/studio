@@ -10,10 +10,9 @@ import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 
-// Helper function to play sound, now takes an audio element
+// Helper function to play sound
 const playNotificationSound = (audio: HTMLAudioElement | null) => {
   if (audio) {
-    // Resetting the time ensures it plays from the start every time
     audio.currentTime = 0;
     audio.play().catch(e => console.error("Error playing notification sound:", e));
   }
@@ -28,11 +27,17 @@ export default function TrackerPage() {
   // Ref to track if user interaction has occurred
   const userInteractedRef = useRef(false);
 
+  // This effect runs only once on the client to initialize the Audio object and state from localStorage
   useEffect(() => {
-    // Create the Audio object once on the client-side
-    // and store it in the ref. It's muted by default.
     audioRef.current = new Audio('/notification.mp3');
-    audioRef.current.muted = true;
+    audioRef.current.muted = true; // Muted by default until user interacts
+    
+    // Check localStorage for previous user interaction
+    const hasInteracted = !!window.localStorage.getItem('userInteractedWithAudio');
+    userInteractedRef.current = hasInteracted;
+    if (hasInteracted && audioRef.current) {
+        audioRef.current.muted = false; // Unmute if user has interacted before
+    }
   }, []);
 
   const ordersQuery = useMemoFirebase(() => {
@@ -74,19 +79,22 @@ export default function TrackerPage() {
   const handleSoundToggle = (enabled: boolean) => {
     setSoundEnabled(enabled);
 
-    // This is the crucial part: the first user gesture
-    if (enabled && !userInteractedRef.current && audioRef.current) {
-        // Unmute and play a silent sound to "unlock" the audio
-        audioRef.current.muted = false;
-        audioRef.current.play().then(() => {
-            // Pause immediately after a successful play
+    if (audioRef.current) {
+        audioRef.current.muted = !enabled;
+    }
+
+    if (enabled && !userInteractedRef.current) {
+        // This is the first user gesture.
+        // Play and immediately pause the audio to "unlock" it in the browser.
+        audioRef.current?.play().then(() => {
             audioRef.current?.pause();
+            console.log("Audio unlocked.");
         }).catch(e => {
-            // If it fails, log it, but the UI is still enabled.
-            // Subsequent attempts on new orders might work.
             console.error("Audio unlock failed:", e);
         });
         userInteractedRef.current = true;
+        // Persist the user's gesture
+        window.localStorage.setItem('userInteractedWithAudio', 'true');
     }
   }
 
