@@ -1,92 +1,28 @@
 /**
  * This ruleset enforces a security model for an internal-facing application
  * (like a Barista or Staff app) where any authenticated user has full
- * management access to all data. This is a common pattern for tools used by a
- * trusted group of employees.
+ * management access to all data.
  *
  * Core Philosophy:
  * Access is granted based on authentication status alone. If a user is signed
- * in, they are considered a trusted operator (e.g., a barista) and can create,
- * read, update, and delete any customer or order record. Unauthenticated users
- * have no access.
- *
- * Data Structure:
- * - /customers/{customerId}: Stores individual customer profiles.
- * - /orders/{orderId}: Stores all orders for the application.
- *
- * Key Security Decisions:
- * - Any Authenticated User Is an Admin: The rules do not distinguish between
- *   different types of users. As long as a user is signed in, they have
- *   permission to manage the entire dataset.
- * - Default Deny: All access is denied by default. Rules explicitly grant
- *   permissions only to authenticated users.
+ * in, they are considered a trusted operator and can perform any action.
+ * Unauthenticated users have no access at all.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper functions to improve readability and maintainability.
+    // Helper function to check if the user is signed in.
     function isSignedIn() {
       return request.auth != null;
     }
 
-    function documentExists() {
-      return resource != null;
-    }
-    
-    function canModifyExistingDoc() {
-      return isSignedIn() && documentExists();
-    }
-
-    function hasValidCustomerDataOnCreate(customerId) {
-      return request.resource.data.id == customerId;
-    }
-
-    function customerDataIsImmutable() {
-      return request.resource.data.id == resource.data.id;
-    }
-    
-    function hasValidOrderDataOnCreate(orderId) {
-      let incomingData = request.resource.data;
-      return incomingData.id == orderId;
-    }
-    
-    function orderDataIsImmutable() {
-       let incomingData = request.resource.data;
-       let existingData = resource.data;
-       return incomingData.id == existingData.id && incomingData.createdAt == existingData.createdAt;
-    }
-
-    /**
-     * @description Manages customer profiles. Any authenticated user (e.g., a barista)
-     *              can create, view, and manage any customer record.
-     */
-    match /customers/{customerId} {
+    // Default deny all access unless explicitly allowed.
+    // This rule allows any authenticated user to read, write, create, update,
+    // delete, and list documents in ANY collection. This is a simple and
+    // effective model for internal staff applications.
+    match /{document=**} {
       allow read, write: if isSignedIn();
-    }
-
-    /**
-     * @description Manages all orders. Any authenticated user can manage any order.
-     */
-    match /orders/{orderId} {
-       allow get: if isSignedIn();
-       allow create: if isSignedIn() && hasValidOrderDataOnCreate(orderId);
-       allow update: if canModifyExistingDoc() && orderDataIsImmutable();
-       allow delete: if canModifyExistingDoc();
-    }
-    
-    /**
-     * @description Allows listing all orders for dashboards and trackers.
-     */
-    match /orders {
-        allow list: if isSignedIn();
-    }
-
-    /**
-     * @description Allows listing all customers.
-     */
-    match /customers {
-        allow list: if isSignedIn();
     }
   }
 }
