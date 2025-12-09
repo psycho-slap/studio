@@ -252,28 +252,18 @@ export default function AddOrderPage() {
 
 
   return (
-    <div className="flex min-h-dvh flex-col bg-background">
-       <header className="flex h-16 shrink-0 items-center justify-between border-b bg-card px-4 shadow-sm md:px-6">
-        <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight text-primary font-headline">
-            Касса
-            </h1>
-        </div>
-        <div className='flex items-center gap-2'>
-            <Button variant="outline" onClick={generateTestOrder}>
-                <TestTube2 className="mr-2 h-4 w-4" />
-                Тестовый заказ
-            </Button>
-            <Button variant="outline" asChild>
-            <Link href="/">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Назад к трекеру
-            </Link>
-            </Button>
-        </div>
-      </header>
+    <div className="flex h-full flex-col bg-background">
+      <div className='flex items-center justify-between p-4 border-b'>
+          <h1 className="text-2xl font-bold tracking-tight text-primary font-headline">
+          Касса
+          </h1>
+          <Button variant="outline" onClick={generateTestOrder}>
+              <TestTube2 className="mr-2 h-4 w-4" />
+              Тестовый заказ
+          </Button>
+      </div>
       
-      <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0">
+      <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0 overflow-hidden">
         <div className="p-4 md:p-6 overflow-y-auto md:col-span-2">
             <h2 className="text-2xl font-bold font-headline mb-4">Ассортимент</h2>
             {Object.entries(DrinkCategories).map(([category, drinks]) => (

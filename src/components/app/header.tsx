@@ -1,4 +1,4 @@
-import { PlusCircle, History, Users, LayoutDashboard } from 'lucide-react';
+import { PlusCircle, History, Users, LayoutDashboard, Coffee } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,12 @@ export default function AppHeader({
       <div className="flex items-center gap-4">
         
         <div className="flex gap-2">
+           <Button variant="ghost" asChild>
+            <Link href="/dashboard">
+              <LayoutDashboard className="mr-2 h-4 w-4" />
+              Панель
+            </Link>
+          </Button>
           <Button variant="secondary" asChild>
             <Link href="/customers">
               <Users className="mr-2 h-4 w-4" />

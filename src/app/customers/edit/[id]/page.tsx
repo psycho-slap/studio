@@ -118,12 +118,6 @@ export default function EditCustomerPage() {
         <h1 className="text-2xl font-bold tracking-tight text-primary font-headline">
           Редактировать клиента
         </h1>
-        <Button variant="outline" asChild>
-          <Link href="/customers">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Отмена
-          </Link>
-        </Button>
       </header>
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <Card className="mx-auto max-w-xl">

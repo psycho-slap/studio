@@ -86,12 +86,6 @@ export default function CustomersPage() {
                     Новый клиент
                 </Link>
             </Button>
-            <Button variant="outline" asChild>
-            <Link href="/">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Назад к трекеру
-            </Link>
-            </Button>
         </div>
       </header>
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
