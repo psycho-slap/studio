@@ -18,27 +18,17 @@ const playNotificationSound = (audio: HTMLAudioElement | null) => {
   }
 };
 
-const LOCAL_STORAGE_SOUND_KEY = 'barista-sound-activated';
-
 export default function TrackerPage() {
   const firestore = useFirestore();
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true); // Sound is conceptually "on"
   const [userHasInteracted, setUserHasInteracted] = useState(false);
-  const [isInteractionChecked, setIsInteractionChecked] = useState(false);
 
   // Ref to hold the single Audio object
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // This effect runs only once on the client to initialize the Audio object and check localStorage
+  // This effect runs only once on the client to initialize the Audio object
   useEffect(() => {
     audioRef.current = new Audio('/notification.mp3');
-    
-    // Check if the user has previously activated sound
-    const hasActivated = localStorage.getItem(LOCAL_STORAGE_SOUND_KEY);
-    if (hasActivated === 'true') {
-      setUserHasInteracted(true);
-    }
-    setIsInteractionChecked(true); // Mark that we have checked storage
   }, []);
 
   const ordersQuery = useMemoFirebase(() => {
@@ -76,14 +66,6 @@ export default function TrackerPage() {
     prevOrdersRef.current = orders;
   }, [orders, areOrdersLoading, soundEnabled, userHasInteracted]);
 
-  const handleSoundToggle = (enabled: boolean) => {
-    setSoundEnabled(enabled);
-    if (enabled && !userHasInteracted) {
-      // If turning sound on for the first time, treat it as an interaction
-      handleUserInteraction();
-    }
-  }
-
   // This function is called when the user clicks the initial sound activation button.
   const handleUserInteraction = () => {
     if (audioRef.current) {
@@ -94,8 +76,6 @@ export default function TrackerPage() {
       }).catch(e => {});
     }
     setUserHasInteracted(true);
-    // Save the interaction state to localStorage
-    localStorage.setItem(LOCAL_STORAGE_SOUND_KEY, 'true');
   };
 
   const completeOrder = useCallback((orderId: string) => {
@@ -140,13 +120,10 @@ export default function TrackerPage() {
     <div className="flex h-dvh w-full flex-col bg-background font-body text-foreground">
       <AppHeader 
         title="Трекер"
-        showSoundControl={true}
-        soundEnabled={soundEnabled}
-        onSoundToggle={handleSoundToggle}
       />
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="mx-auto max-w-6xl">
-            {isInteractionChecked && !userHasInteracted && (
+            {!userHasInteracted && (
                 <div className="mb-4 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-primary/50 bg-card p-6 text-center">
                     <h3 className="text-lg font-semibold">Активация рабочего места</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
