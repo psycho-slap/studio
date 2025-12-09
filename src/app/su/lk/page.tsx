@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import type { Order } from '@/lib/types';
 import { Loader2, DollarSign, ShoppingCart, BarChart, Clock, CalendarIcon } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useAuth } from '@/firebase';
@@ -39,16 +40,16 @@ const getEndOfDay = (date: Date) => {
 export default function DashboardPage() {
     const firestore = useFirestore();
     const { user, isUserLoading } = useUser();
-    const auth = useAuth();
+    const router = useRouter();
     
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'card' | 'cash'>('all');
 
     useEffect(() => {
         if (!isUserLoading && !user) {
-            initiateAnonymousSignIn(auth);
+            router.push('/su/login');
         }
-    }, [isUserLoading, user, auth]);
+    }, [isUserLoading, user, router]);
 
 
     const dateRange = useMemo(() => {
@@ -93,25 +94,11 @@ export default function DashboardPage() {
 
     const isLoading = isUserLoading || areOrdersLoading;
 
-    if (isLoading) {
+    if (isLoading || !user) {
         return (
             <div className="flex h-full w-full flex-col items-center justify-center bg-background">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <p className="mt-4 text-muted-foreground">Загрузка данных...</p>
-            </div>
-        );
-    }
-    
-    if (!user) {
-        return (
-            <div className="flex h-full w-full flex-col items-center justify-center bg-background p-4 text-center">
-                <h1 className="text-2xl font-bold text-destructive">Доступ запрещен</h1>
-                <p className="mt-2 text-muted-foreground">
-                    Для просмотра этой страницы необходимо войти в систему.
-                </p>
-                <Button onClick={() => initiateAnonymousSignIn(auth)} className="mt-4">
-                    Войти как сотрудник
-                </Button>
             </div>
         );
     }

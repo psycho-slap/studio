@@ -1,11 +1,11 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useCollection, useFirestore, useUser, useAuth, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { ArrowLeft, Loader2, UserPlus, Users } from 'lucide-react';
+import { ArrowLeft, Loader2, UserPlus, Users, LogIn } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -16,13 +16,20 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Customer } from '@/lib/types';
-import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
 import AppHeader from '@/components/app/header';
+import { useRouter } from 'next/navigation';
 
 export default function CustomersPage() {
   const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/su/login');
+    }
+  }, [isUserLoading, user, router]);
 
   const customersRef = useMemoFirebase(() => {
     if (!firestore || !user) return null;
@@ -31,26 +38,12 @@ export default function CustomersPage() {
 
   const { data: customers, isLoading, error } = useCollection<Customer>(customersRef);
 
-  if (isUserLoading || isLoading) {
+  if (isUserLoading || isLoading || !user) {
     return (
       <div className="flex h-dvh w-full flex-col items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="mt-4 text-muted-foreground">Загрузка данных о клиентах...</p>
       </div>
-    );
-  }
-
-  if (!user) {
-    return (
-        <div className="flex h-dvh w-full flex-col items-center justify-center bg-background p-4 text-center">
-            <h1 className="text-2xl font-bold text-destructive">Доступ запрещен</h1>
-            <p className="mt-2 text-muted-foreground">
-                Для просмотра этой страницы необходимо войти в систему.
-            </p>
-            <Button onClick={() => initiateAnonymousSignIn(auth)} className="mt-4">
-                Войти как сотрудник
-            </Button>
-        </div>
     );
   }
   

@@ -3,12 +3,14 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Order } from '@/lib/types';
 import OrderCard from '@/components/app/order-card';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { Loader2, Volume2 } from 'lucide-react';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
+import { Loader2, Volume2, LogIn } from 'lucide-react';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import AppHeader from '@/components/app/header';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 // Helper function to play sound
 const playNotificationSound = (audio: HTMLAudioElement | null) => {
@@ -20,6 +22,8 @@ const playNotificationSound = (audio: HTMLAudioElement | null) => {
 
 export default function TrackerPage() {
   const firestore = useFirestore();
+  const { user, isUserLoading } = useUser();
+  const router = useRouter();
   const [userHasInteracted, setUserHasInteracted] = useState(false);
 
   // Ref to hold the single Audio object
@@ -32,12 +36,12 @@ export default function TrackerPage() {
   }, []);
 
   const ordersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null; // Wait for user to be authenticated
     return query(
       collection(firestore, 'orders'),
       orderBy('createdAt', 'asc')
     );
-  }, [firestore]);
+  }, [firestore, user]);
 
   const { data: orders, isLoading: areOrdersLoading, error } = useCollection<Order>(ordersQuery);
 
@@ -83,8 +87,7 @@ export default function TrackerPage() {
     updateDocumentNonBlocking(orderRef, { status: 'завершен', completedAt: Date.now() });
   }, [firestore]);
 
-  
-  const isLoading = areOrdersLoading;
+  const isLoading = isUserLoading || (user && areOrdersLoading);
 
   if (isLoading) {
     return (
@@ -97,6 +100,23 @@ export default function TrackerPage() {
             </div>
             <p className="mt-4 text-muted-foreground">Загрузка заказов...</p>
         </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="flex h-dvh w-full flex-col items-center justify-center bg-background p-4 text-center">
+        <h1 className="text-2xl font-bold text-destructive">Доступ запрещен</h1>
+        <p className="mt-2 text-muted-foreground">
+            Для использования трекера необходимо войти в систему.
+        </p>
+        <Button asChild className="mt-4">
+          <Link href="/su/login">
+            <LogIn className="mr-2" />
+            Перейти ко входу
+          </Link>
+        </Button>
+      </div>
     );
   }
   

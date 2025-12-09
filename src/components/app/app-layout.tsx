@@ -13,17 +13,37 @@ import {
   SidebarGroupLabel,
   SidebarInset,
 } from '@/components/ui/sidebar';
-import { useAuth } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { LogOut, User, BarChart, Package, Warehouse, HardDrive, Coffee, Users, PlusCircle, History } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const auth = useAuth();
+    const { user, isUserLoading } = useUser();
+    const router = useRouter();
     const pathname = usePathname();
 
+    useEffect(() => {
+        if (!isUserLoading && !user) {
+            router.push('/su/login');
+        }
+    }, [isUserLoading, user, router]);
+
+
     const isActive = (path: string) => pathname.startsWith(path);
+
+    const handleSignOut = () => {
+        auth?.signOut().then(() => {
+            router.push('/su/login');
+        })
+    }
+
+    if (isUserLoading || !user) {
+        return null; // Or a loading spinner
+    }
 
     return (
         <SidebarProvider>
@@ -107,11 +127,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <SidebarMenuItem>
                             <SidebarMenuButton>
                                 <User />
-                                Сотрудник #1
+                                {user.email || 'Сотрудник'}
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                            <SidebarMenuButton onClick={() => auth?.signOut()}>
+                            <SidebarMenuButton onClick={handleSignOut}>
                                 <LogOut />
                                 Выход
                             </SidebarMenuButton>
