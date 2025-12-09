@@ -139,21 +139,22 @@ export default function TrackerPage() {
   return (
     <div className="flex h-dvh w-full flex-col bg-background font-body text-foreground">
       <AppHeader 
+        title="Трекер"
         showSoundControl={true}
         soundEnabled={soundEnabled}
         onSoundToggle={handleSoundToggle}
       />
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="mx-auto max-w-6xl">
-            {isInteractionChecked && !userHasInteracted && soundEnabled && (
+            {isInteractionChecked && !userHasInteracted && (
                 <div className="mb-4 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-primary/50 bg-card p-6 text-center">
-                    <h3 className="text-lg font-semibold">Включить звуковые оповещения?</h3>
+                    <h3 className="text-lg font-semibold">Активация рабочего места</h3>
                     <p className="mt-1 text-sm text-muted-foreground">
-                        Нажмите кнопку, чтобы разрешить звуки для новых заказов.
+                        Нажмите, чтобы начать работу и включить звуковые оповещения о новых заказах.
                     </p>
                     <Button onClick={handleUserInteraction} className="mt-4">
                         <Volume2 className="mr-2 h-4 w-4" />
-                        Активировать звук
+                        Активировать трекер
                     </Button>
                 </div>
             )}
