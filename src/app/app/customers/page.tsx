@@ -76,8 +76,14 @@ export default function CustomersPage() {
       <AppHeader title="Клиентская база" />
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Список клиентов</CardTitle>
+            <Button asChild>
+                <Link href="/app/customers/new">
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Новый клиент
+                </Link>
+            </Button>
           </CardHeader>
           <CardContent>
             <Table>

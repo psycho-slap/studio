@@ -6,15 +6,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { ArrowLeft, Loader2, Save } from 'lucide-react';
-import Link from 'next/link';
+import { Loader2, Save } from 'lucide-react';
+import AppHeader from '@/components/app/header';
 
 const customerSchema = z.object({
   name: z.string().min(2, { message: 'Имя должно содержать не менее 2 символов.' }),
@@ -40,14 +40,14 @@ export default function NewCustomerPage() {
   });
 
   const onSubmit = (values: CustomerFormValues) => {
-    if (!user) {
+    if (!firestore || !user) {
         alert('Вы должны быть авторизованы для добавления клиента.');
         return;
     }
     
     setIsSubmitting(true);
     
-    // Use phone number as document ID
+    // Use phone number as document ID (digits only)
     const customerId = values.phoneNumber.replace(/\D/g, '');
     const customerRef = doc(firestore, 'customers', customerId);
 
@@ -58,17 +58,12 @@ export default function NewCustomerPage() {
     
     setDocumentNonBlocking(customerRef, newCustomerData, { merge: false });
     
-    // No need to await, just navigate
     router.push('/app/customers');
   };
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <header className="flex h-16 shrink-0 items-center justify-between border-b bg-card px-4 shadow-sm md:px-6">
-        <h1 className="text-2xl font-bold tracking-tight text-primary font-headline">
-          Новый клиент
-        </h1>
-      </header>
+      <AppHeader title="Новый клиент" />
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <Card className="mx-auto max-w-xl">
           <CardHeader>
