@@ -28,6 +28,7 @@ export default function TrackerPage() {
 
   // This effect runs only once on the client to initialize the Audio object
   useEffect(() => {
+    // This ensures the Audio object is created only on the client side
     audioRef.current = new Audio('/notification.mp3');
   }, []);
 
