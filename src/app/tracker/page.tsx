@@ -5,7 +5,7 @@ import type { Order } from '@/lib/types';
 import AppHeader from '@/components/app/header';
 import OrderCard from '@/components/app/order-card';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Volume2 } from 'lucide-react';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
@@ -20,24 +20,15 @@ const playNotificationSound = (audio: HTMLAudioElement | null) => {
 
 export default function TrackerPage() {
   const firestore = useFirestore();
-  const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [userHasInteracted, setUserHasInteracted] = useState(false);
 
   // Ref to hold the single Audio object
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  // Ref to track if user interaction has occurred
-  const userInteractedRef = useRef(false);
 
-  // This effect runs only once on the client to initialize the Audio object and state from localStorage
+  // This effect runs only once on the client to initialize the Audio object
   useEffect(() => {
     audioRef.current = new Audio('/notification.mp3');
-    audioRef.current.muted = true; // Muted by default until user interacts
-    
-    // Check localStorage for previous user interaction
-    const hasInteracted = !!window.localStorage.getItem('userInteractedWithAudio');
-    userInteractedRef.current = hasInteracted;
-    if (hasInteracted && audioRef.current) {
-        audioRef.current.muted = false; // Unmute if user has interacted before
-    }
   }, []);
 
   const ordersQuery = useMemoFirebase(() => {
@@ -67,37 +58,32 @@ export default function TrackerPage() {
       prevOrdersRef.current !== null &&
       currentPreparingOrders.length > prevPreparingOrders.length &&
       soundEnabled &&
-      userInteractedRef.current // Only play if user has interacted
+      userHasInteracted
     ) {
       playNotificationSound(audioRef.current);
     }
 
     prevOrdersRef.current = orders;
-  }, [orders, areOrdersLoading, soundEnabled]);
-
+  }, [orders, areOrdersLoading, soundEnabled, userHasInteracted]);
 
   const handleSoundToggle = (enabled: boolean) => {
     setSoundEnabled(enabled);
-
-    if (audioRef.current) {
-        audioRef.current.muted = !enabled;
-    }
-
-    if (enabled && !userInteractedRef.current) {
-        // This is the first user gesture.
-        // Play and immediately pause the audio to "unlock" it in the browser.
-        audioRef.current?.play().then(() => {
-            audioRef.current?.pause();
-            console.log("Audio unlocked.");
-        }).catch(e => {
-            console.error("Audio unlock failed:", e);
-        });
-        userInteractedRef.current = true;
-        // Persist the user's gesture
-        window.localStorage.setItem('userInteractedWithAudio', 'true');
+    if (!userHasInteracted) {
+      handleUserInteraction();
     }
   }
 
+  // This function is called when the user clicks the initial sound activation button.
+  const handleUserInteraction = () => {
+    if (audioRef.current) {
+      // Play and immediately pause to "unlock" audio in the browser
+      audioRef.current.play().then(() => {
+        audioRef.current?.pause();
+        audioRef.current!.currentTime = 0;
+      }).catch(e => {});
+    }
+    setUserHasInteracted(true);
+  };
 
   const completeOrder = useCallback((orderId: string) => {
     if (!firestore) return;
@@ -135,7 +121,6 @@ export default function TrackerPage() {
     );
   }
 
-
   const preparingOrders = orders ? orders.filter(o => o.status === 'готовится') : [];
 
   return (
@@ -147,6 +132,18 @@ export default function TrackerPage() {
       />
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="mx-auto max-w-6xl">
+            {!userHasInteracted && soundEnabled && (
+                <div className="mb-4 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-primary/50 bg-card p-6 text-center">
+                    <h3 className="text-lg font-semibold">Включить звуковые оповещения?</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                        Нажмите кнопку, чтобы разрешить звуки для новых заказов.
+                    </p>
+                    <Button onClick={handleUserInteraction} className="mt-4">
+                        <Volume2 className="mr-2 h-4 w-4" />
+                        Активировать звук
+                    </Button>
+                </div>
+            )}
             <h2 className="text-2xl font-bold font-headline mb-4">Активные заказы ({preparingOrders.length})</h2>
             {preparingOrders.length > 0 ? (
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
