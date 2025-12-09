@@ -242,9 +242,56 @@ export default function AddOrderPage() {
     setIsPaymentOpen(false);
   };
   
+    const generateTestOrder = useCallback(() => {
+    if (!firestore) return;
+
+    const numberOfItems = Math.floor(Math.random() * 2) + 1; // 1 or 2 items
+    const orderItems: OrderItem[] = [];
+    let totalPrice = 0;
+    let estimatedPrepTime = 0;
+
+    for (let i = 0; i < numberOfItems; i++) {
+        const randomDrink = DRINKS[Math.floor(Math.random() * DRINKS.length)];
+        const newItem: OrderItem = {
+            id: `${randomDrink.id}-${Date.now()}-${i}`,
+            drinkId: randomDrink.id,
+            name: randomDrink.name,
+            price: randomDrink.price,
+            customizations: '',
+            finalPrice: randomDrink.price,
+            quantity: 1,
+            isReady: false,
+        };
+        orderItems.push(newItem);
+        totalPrice += newItem.finalPrice;
+        estimatedPrepTime += randomDrink.prepTime * 60; // in seconds
+    }
+    
+    const orderId = `test-order-${Date.now()}`;
+    const newOrder: Order = {
+        id: orderId,
+        customerName: 'Тестовый клиент',
+        items: orderItems,
+        status: 'готовится',
+        createdAt: Date.now(),
+        totalPrice: totalPrice,
+        paymentMethod: Math.random() > 0.5 ? 'card' : 'cash',
+        estimatedPrepTime: estimatedPrepTime,
+    };
+
+    const orderRef = doc(firestore, 'orders', orderId);
+    setDocumentNonBlocking(orderRef, newOrder, {});
+
+    toast({
+        title: "Тестовый заказ создан!",
+        description: "Он появится на трекере.",
+    });
+
+  }, [firestore, toast]);
+
   return (
     <div className="flex h-dvh flex-col bg-background">
-      <AppHeader title="Касса" />
+      <AppHeader title="Касса" showTestOrderButton onTestOrderClick={generateTestOrder} />
       
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-0 overflow-hidden">
         <ScrollArea className="p-4 md:p-6 lg:col-span-2">
