@@ -38,7 +38,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <SidebarGroup>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <Link href="/dashboard" legacyBehavior passHref>
+                                <Link href="/dashboard">
                                     <SidebarMenuButton isActive={isActive('/dashboard')}>
                                         <BarChart />
                                         Панель
@@ -46,7 +46,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 </Link>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                               <Link href="/products" legacyBehavior passHref>
+                               <Link href="/products">
                                     <SidebarMenuButton isActive={isActive('/products')} disabled>
                                         <Package />
                                         Товары
@@ -54,7 +54,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 </Link>
                             </SidebarMenuItem>
                              <SidebarMenuItem>
-                                <Link href="/inventory" legacyBehavior passHref>
+                                <Link href="/inventory">
                                     <SidebarMenuButton isActive={isActive('/inventory')} disabled>
                                         <Warehouse />
                                         Склад
@@ -62,7 +62,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 </Link>
                             </SidebarMenuItem>
                              <SidebarMenuItem>
-                                <Link href="/devices" legacyBehavior passHref>
+                                <Link href="/devices">
                                     <SidebarMenuButton isActive={isActive('/devices')} disabled>
                                         <HardDrive />
                                         Устройства
