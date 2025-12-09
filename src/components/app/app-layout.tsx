@@ -23,7 +23,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const auth = useAuth();
     const pathname = usePathname();
 
-    const isActive = (path: string) => pathname === path;
+    const isActive = (path: string) => pathname.startsWith(path);
 
     return (
         <SidebarProvider>
@@ -39,32 +39,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <SidebarGroupLabel>Управление</SidebarGroupLabel>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <Link href="/lk/su">
-                                    <SidebarMenuButton isActive={isActive('/lk/su')}>
+                                <Link href="/su/lk">
+                                    <SidebarMenuButton isActive={pathname === '/su/lk'}>
                                         <BarChart />
                                         Панель
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                               <Link href="/lk/su/products">
-                                    <SidebarMenuButton isActive={isActive('/lk/su/products')}>
+                               <Link href="/su/lk/products">
+                                    <SidebarMenuButton isActive={isActive('/su/lk/products')}>
                                         <Package />
                                         Товары
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
                              <SidebarMenuItem>
-                                <Link href="/lk/su/inventory">
-                                    <SidebarMenuButton isActive={isActive('/lk/su/inventory')}>
+                                <Link href="/su/lk/inventory">
+                                    <SidebarMenuButton isActive={isActive('/su/lk/inventory')}>
                                         <Warehouse />
                                         Склад
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
                              <SidebarMenuItem>
-                                <Link href="/lk/su/devices">
-                                    <SidebarMenuButton isActive={isActive('/lk/su/devices')}>
+                                <Link href="/su/lk/devices">
+                                    <SidebarMenuButton isActive={isActive('/su/lk/devices')}>
                                         <HardDrive />
                                         Устройства
                                     </SidebarMenuButton>
@@ -76,24 +76,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <SidebarGroupLabel>Рабочие инструменты</SidebarGroupLabel>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <Link href="/app/tracker">
-                                    <SidebarMenuButton isActive={isActive('/app/tracker')}>
+                                <Link href="/su/app/tracker">
+                                    <SidebarMenuButton isActive={isActive('/su/app/tracker')}>
                                         <Coffee />
                                         Трекер
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                               <Link href="/app/add-order">
-                                    <SidebarMenuButton isActive={isActive('/app/add-order')}>
+                               <Link href="/su/app/add-order">
+                                    <SidebarMenuButton isActive={isActive('/su/app/add-order')}>
                                         <PlusCircle />
                                         Касса
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
                              <SidebarMenuItem>
-                                <Link href="/app/customers">
-                                    <SidebarMenuButton isActive={isActive('/app/customers')}>
+                                <Link href="/su/app/customers">
+                                    <SidebarMenuButton isActive={isActive('/su/app/customers')}>
                                         <Users />
                                         Клиенты
                                     </SidebarMenuButton>
