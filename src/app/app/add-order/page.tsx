@@ -256,8 +256,8 @@ export default function AddOrderPage() {
     <div className="flex h-dvh flex-col bg-background">
       <AppHeader title="Касса" showTestOrderButton onTestOrderClick={generateTestOrder} />
       
-      <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0 overflow-hidden">
-        <div className="p-4 md:p-6 overflow-y-auto md:col-span-2">
+      <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0 md:overflow-hidden">
+        <ScrollArea className="p-4 md:p-6 md:col-span-2">
             <h2 className="text-2xl font-bold font-headline mb-4">Ассортимент</h2>
             {Object.entries(DrinkCategories).map(([category, drinks]) => (
                 <div key={category} className="mb-6">
@@ -277,9 +277,9 @@ export default function AddOrderPage() {
                     </div>
                 </div>
             ))}
-        </div>
+        </ScrollArea>
 
-        <div className="flex flex-col border-l bg-card p-4 md:p-6">
+        <div className="flex flex-col border-t md:border-t-0 md:border-l bg-card p-4 md:p-6">
            <div className="flex-1 overflow-y-auto">
              <h2 className="text-2xl font-bold font-headline mb-1">Текущий заказ</h2>
              
@@ -354,8 +354,8 @@ export default function AddOrderPage() {
                     ))}
                 </div>
             ) : (
-                <div className="flex h-full items-center justify-center text-center">
-                    <p className="text-muted-foreground">Выберите напитки из ассортимента слева, чтобы начать.</p>
+                <div className="flex h-full items-center justify-center text-center min-h-[100px]">
+                    <p className="text-muted-foreground">Выберите напитки из ассортимента, чтобы начать.</p>
                 </div>
             )}
            </div>
