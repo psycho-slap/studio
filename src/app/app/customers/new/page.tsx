@@ -59,7 +59,7 @@ export default function NewCustomerPage() {
     setDocumentNonBlocking(customerRef, newCustomerData, { merge: false });
     
     // No need to await, just navigate
-    router.push('/customers');
+    router.push('/app/customers');
   };
 
   return (

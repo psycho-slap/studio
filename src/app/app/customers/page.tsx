@@ -65,7 +65,7 @@ export default function CustomersPage() {
             <code>{error.message}</code>
           </pre>
           <Button asChild className="mt-4">
-            <Link href="/">Вернуться на главный экран</Link>
+            <Link href="/app/tracker">Вернуться на главный экран</Link>
           </Button>
       </div>
     )
@@ -98,7 +98,7 @@ export default function CustomersPage() {
                       <TableCell>{customer.notes || '-'}</TableCell>
                       <TableCell className="text-right">
                         <Button variant="outline" size="sm" asChild>
-                          <Link href={`/customers/edit/${customer.id}`}>Редактировать</Link>
+                          <Link href={`/app/customers/edit/${customer.id}`}>Редактировать</Link>
                         </Button>
                       </TableCell>
                     </TableRow>

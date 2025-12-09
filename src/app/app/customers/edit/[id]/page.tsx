@@ -81,14 +81,14 @@ export default function EditCustomerPage() {
     
     setDocumentNonBlocking(customerRef, updatedData, { merge: true });
     
-    router.push('/customers');
+    router.push('/app/customers');
   };
 
   const handleDelete = () => {
     if (!customerRef) return;
     setIsDeleting(true);
     deleteDocumentNonBlocking(customerRef);
-    router.push('/customers');
+    router.push('/app/customers');
   };
 
   if (isLoading) {
@@ -106,7 +106,7 @@ export default function EditCustomerPage() {
             <h1 className="text-2xl font-bold text-destructive">Клиент не найден</h1>
             <p className="mt-2 text-muted-foreground">Не удалось найти клиента с указанным ID.</p>
             <Button asChild className="mt-4">
-                <Link href="/customers">Вернуться к списку</Link>
+                <Link href="/app/customers">Вернуться к списку</Link>
             </Button>
         </div>
       )
