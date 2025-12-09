@@ -81,5 +81,12 @@ service cloud.firestore {
     match /orders {
         allow list: if isSignedIn();
     }
+
+    /**
+     * @description Allows listing all customers.
+     */
+    match /customers {
+        allow list: if isSignedIn();
+    }
   }
 }
