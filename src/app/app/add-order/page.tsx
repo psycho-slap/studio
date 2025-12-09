@@ -3,8 +3,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import Link from 'next/link';
-import { ArrowLeft, Trash2, Plus, CreditCard, Landmark, X, Users, UserRoundX, TestTube2 } from 'lucide-react';
+import { ArrowLeft, Trash2, Plus, CreditCard, Landmark, X, Users, UserRoundX, TestTube2, ShoppingCart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Order, OrderItem, Drink, Customer } from '@/lib/types';
 import { DRINKS } from '@/lib/data';
@@ -17,6 +16,14 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/components/ui/dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+  SheetFooter
+} from "@/components/ui/sheet"
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -78,6 +85,10 @@ export default function AddOrderPage() {
 
   const totalPrice = useMemo(() => {
     return orderItems.reduce((total, item) => total + item.finalPrice, 0);
+  }, [orderItems]);
+
+  const totalItems = useMemo(() => {
+    return orderItems.length;
   }, [orderItems]);
   
   const change = useMemo(() => {
@@ -250,37 +261,10 @@ export default function AddOrderPage() {
     });
 
   }, [firestore, toast]);
-
-
-  return (
-    <div className="flex h-dvh flex-col bg-background">
-      <AppHeader title="Касса" showTestOrderButton onTestOrderClick={generateTestOrder} />
-      
-      <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0 md:overflow-hidden">
-        <ScrollArea className="p-4 md:p-6 md:col-span-2">
-            <h2 className="text-2xl font-bold font-headline mb-4">Ассортимент</h2>
-            {Object.entries(DrinkCategories).map(([category, drinks]) => (
-                <div key={category} className="mb-6">
-                    <h3 className="text-xl font-semibold mb-3 text-muted-foreground">{category}</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {drinks.map(drink => (
-                           <Button 
-                             key={drink.id}
-                             variant="outline"
-                             className="h-24 text-left flex flex-col items-start justify-between p-3"
-                             onClick={() => handleDrinkSelect(drink)}
-                           >
-                               <span className="font-semibold">{drink.name}</span>
-                               <span className="text-sm text-muted-foreground">{drink.price} руб.</span>
-                           </Button>
-                        ))}
-                    </div>
-                </div>
-            ))}
-        </ScrollArea>
-
-        <div className="flex flex-col border-t md:border-t-0 md:border-l bg-card p-4 md:p-6">
-           <div className="flex-1 overflow-y-auto">
+  
+  const OrderSummary = () => (
+     <div className="flex flex-col h-full bg-card">
+           <div className="p-4 md:p-6 pb-0">
              <h2 className="text-2xl font-bold font-headline mb-1">Текущий заказ</h2>
              
              <div className="mt-4 mb-4">
@@ -332,49 +316,104 @@ export default function AddOrderPage() {
                    Для гостя без карты лояльности оставьте поле пустым.
                 </p>
              </div>
-
-
-            {orderItems.length > 0 ? (
-                <div className="space-y-3">
-                    {orderItems.map((item) => (
-                        <Card key={item.id} className="p-3">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="font-semibold">{item.name}</p>
-                                    {item.customizations && <p className="text-xs text-muted-foreground">{item.customizations}</p>}
-                                </div>
-                                <div className="text-right">
-                                    <p className="font-semibold">{item.finalPrice} руб.</p>
-                                    <button onClick={() => handleRemoveItem(item.id)} className="text-destructive hover:text-destructive/80 mt-1">
-                                        <Trash2 className="h-4 w-4"/>
-                                    </button>
-                                </div>
-                            </div>
-                        </Card>
-                    ))}
-                </div>
-            ) : (
-                <div className="flex h-full items-center justify-center text-center min-h-[100px]">
-                    <p className="text-muted-foreground">Выберите напитки из ассортимента, чтобы начать.</p>
-                </div>
-            )}
            </div>
-           
-           <Separator className="my-4"/>
 
-            <div className="mt-auto space-y-4">
+           <ScrollArea className="flex-1 px-4 md:px-6">
+                {orderItems.length > 0 ? (
+                    <div className="space-y-3">
+                        {orderItems.map((item) => (
+                            <Card key={item.id} className="p-3">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <p className="font-semibold">{item.name}</p>
+                                        {item.customizations && <p className="text-xs text-muted-foreground">{item.customizations}</p>}
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="font-semibold">{item.finalPrice} руб.</p>
+                                        <button onClick={() => handleRemoveItem(item.id)} className="text-destructive hover:text-destructive/80 mt-1">
+                                            <Trash2 className="h-4 w-4"/>
+                                        </button>
+                                    </div>
+                                </div>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex h-full items-center justify-center text-center min-h-[100px]">
+                        <p className="text-muted-foreground">Выберите напитки из ассортимента, чтобы начать.</p>
+                    </div>
+                )}
+           </ScrollArea>
+           
+           <div className="p-4 md:p-6 border-t mt-auto bg-card">
                  <div className="flex justify-between items-center text-xl font-bold">
                     <span>Итого:</span>
                     <span>{totalPrice} руб.</span>
                 </div>
-                <Button size="lg" className="w-full" onClick={() => setIsPaymentOpen(true)} disabled={orderItems.length === 0}>
+                <Button size="lg" className="w-full mt-4" onClick={() => setIsPaymentOpen(true)} disabled={orderItems.length === 0}>
                     К оплате
                 </Button>
-                 <Button variant="ghost" size="sm" className="w-full text-destructive" onClick={resetOrder}>
+                 <Button variant="ghost" size="sm" className="w-full text-destructive mt-2" onClick={resetOrder}>
                     Сбросить заказ
                 </Button>
             </div>
         </div>
+  );
+
+
+  return (
+    <div className="flex h-dvh flex-col bg-background">
+      <AppHeader title="Касса" showTestOrderButton onTestOrderClick={generateTestOrder} />
+      
+      <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0 md:overflow-hidden">
+        {/* Assortment - visible on all screens */}
+        <ScrollArea className="p-4 md:p-6 md:col-span-2">
+            <h2 className="text-2xl font-bold font-headline mb-4">Ассортимент</h2>
+            {Object.entries(DrinkCategories).map(([category, drinks]) => (
+                <div key={category} className="mb-6">
+                    <h3 className="text-xl font-semibold mb-3 text-muted-foreground">{category}</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {drinks.map(drink => (
+                           <Button 
+                             key={drink.id}
+                             variant="outline"
+                             className="h-24 text-left flex flex-col items-start justify-between p-3"
+                             onClick={() => handleDrinkSelect(drink)}
+                           >
+                               <span className="font-semibold">{drink.name}</span>
+                               <span className="text-sm text-muted-foreground">{drink.price} руб.</span>
+                           </Button>
+                        ))}
+                    </div>
+                </div>
+            ))}
+        </ScrollArea>
+
+        {/* Order Summary - visible on desktop */}
+        <div className="hidden md:flex md:flex-col border-l">
+          <OrderSummary />
+        </div>
+
+        {/* Mobile Order Summary - Button and Sheet */}
+        <div className="md:hidden fixed bottom-4 right-4 z-10">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button size="lg" className="h-16 w-16 rounded-full shadow-lg">
+                <ShoppingCart className="h-6 w-6" />
+                {totalItems > 0 && <Badge className="absolute -top-1 -right-1">{totalItems}</Badge>}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[90dvh] flex flex-col p-0">
+               <SheetHeader className="p-4 pb-0">
+                 <SheetTitle>Текущий заказ</SheetTitle>
+               </SheetHeader>
+               <div className="flex-1 min-h-0">
+                 <OrderSummary />
+               </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+
       </main>
 
       {/* Modifiers Dialog */}
