@@ -1,11 +1,10 @@
-// This page now has a layout that sets the title
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { ArrowLeft, Trash2, Plus, CreditCard, Landmark, X, Users, UserRoundX } from 'lucide-react';
+import { ArrowLeft, Trash2, Plus, CreditCard, Landmark, X, Users, UserRoundX, TestTube2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Order, OrderItem, Drink, Customer } from '@/lib/types';
 import { DRINKS } from '@/lib/data';
@@ -206,6 +205,51 @@ export default function AddOrderPage() {
     setIsPaymentOpen(false);
   };
 
+  const generateTestOrder = useCallback(() => {
+    if (!firestore) return;
+
+    const numberOfItems = Math.floor(Math.random() * 2) + 1; // 1 or 2 items
+    const orderItems: OrderItem[] = [];
+    let totalPrice = 0;
+    let estimatedPrepTime = 0;
+
+    for (let i = 0; i < numberOfItems; i++) {
+        const randomDrink = DRINKS[Math.floor(Math.random() * DRINKS.length)];
+        const newItem: OrderItem = {
+            id: `${randomDrink.id}-${Date.now()}-${i}`,
+            drinkId: randomDrink.id,
+            name: randomDrink.name,
+            price: randomDrink.price,
+            customizations: '',
+            finalPrice: randomDrink.price,
+        };
+        orderItems.push(newItem);
+        totalPrice += newItem.finalPrice;
+        estimatedPrepTime += randomDrink.prepTime * 60; // in seconds
+    }
+    
+    const orderId = `test-order-${Date.now()}`;
+    const newOrder: Order = {
+        id: orderId,
+        customerName: 'Тестовый клиент',
+        items: orderItems,
+        status: 'готовится',
+        createdAt: Date.now(),
+        totalPrice: totalPrice,
+        paymentMethod: Math.random() > 0.5 ? 'card' : 'cash',
+        estimatedPrepTime: estimatedPrepTime,
+    };
+
+    const orderRef = doc(firestore, 'orders', orderId);
+    setDocumentNonBlocking(orderRef, newOrder, {});
+
+    toast({
+        title: "Тестовый заказ создан!",
+        description: "Он появится на трекере.",
+    });
+
+  }, [firestore, toast]);
+
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
@@ -215,12 +259,18 @@ export default function AddOrderPage() {
             Касса
             </h1>
         </div>
-        <Button variant="outline" asChild>
-          <Link href="/">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Назад к трекеру
-          </Link>
-        </Button>
+        <div className='flex items-center gap-2'>
+            <Button variant="outline" onClick={generateTestOrder}>
+                <TestTube2 className="mr-2 h-4 w-4" />
+                Тестовый заказ
+            </Button>
+            <Button variant="outline" asChild>
+            <Link href="/">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Назад к трекеру
+            </Link>
+            </Button>
+        </div>
       </header>
       
       <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0">
