@@ -28,12 +28,6 @@ export default function AppHeader({
         
         <div className="flex gap-2">
           <Button variant="secondary" asChild>
-            <Link href="/dashboard">
-              <LayoutDashboard className="mr-2 h-4 w-4" />
-              Дашборд
-            </Link>
-          </Button>
-          <Button variant="secondary" asChild>
             <Link href="/customers">
               <Users className="mr-2 h-4 w-4" />
               Клиенты
