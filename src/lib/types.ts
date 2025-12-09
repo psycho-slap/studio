@@ -26,20 +26,21 @@ export interface Drink {
 }
 
 export interface OrderItem {
-    id: string; // unique item id in one order
+    id: string; // unique item id in one order, format: `drinkId-customizationHash`
     drinkId: string;
     name: string;
     price: number;
     customizations: string; // e.g., "Oat Milk, Vanilla"
     finalPrice: number;
-    isReady?: boolean; // New field for readiness status
+    isReady?: boolean;
+    quantity: number;
 }
 
 export interface Order {
   id: string;
   customerName: string; // Can be "Гость" or the customer's name
   customerId?: string; // Optional customer ID from Firestore
-  items: OrderItem[];
+  items: OrderItem[]; // Note: For tracker, items with quantity > 1 should be split.
   status: OrderStatus;
   createdAt: number; // Using number (timestamp) for simplicity across client/server
   completedAt?: number; // Timestamp when the order was completed

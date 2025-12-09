@@ -3,9 +3,8 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import Link from 'next/link';
-import { ArrowLeft, Trash2, Plus, CreditCard, Landmark, X, Users, UserRoundX, TestTube2 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Trash2, Plus, CreditCard, Landmark, Users, UserRoundX, Minus } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import type { Order, OrderItem, Drink, Customer } from '@/lib/types';
 import { DRINKS } from '@/lib/data';
 import { Separator } from '@/components/ui/separator';
@@ -15,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -31,6 +29,8 @@ import { Check as CheckIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import AppHeader from '@/components/app/header';
+import crypto from 'crypto';
+
 
 const DrinkCategories = DRINKS.reduce((acc, drink) => {
   if (!acc[drink.category]) {
@@ -41,6 +41,13 @@ const DrinkCategories = DRINKS.reduce((acc, drink) => {
 }, {} as Record<string, Drink[]>);
 
 type PaymentMethod = 'card' | 'cash';
+
+// A simple hashing function for customizations
+const hashCustomizations = (customizations: string) => {
+    if (!customizations) return 'default';
+    return crypto.createHash('md5').update(customizations).digest('hex').substring(0, 8);
+}
+
 
 export default function AddOrderPage() {
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
@@ -77,7 +84,7 @@ export default function AddOrderPage() {
   const { data: customers } = useCollection<Customer>(customersRef);
 
   const totalPrice = useMemo(() => {
-    return orderItems.reduce((total, item) => total + item.finalPrice, 0);
+    return orderItems.reduce((total, item) => total + (item.finalPrice * item.quantity), 0);
   }, [orderItems]);
   
   const change = useMemo(() => {
@@ -141,23 +148,40 @@ export default function AddOrderPage() {
         });
     });
 
-    const newItem: OrderItem = {
-        id: `${selectedDrink.id}-${Date.now()}`,
-        drinkId: selectedDrink.id,
-        name: selectedDrink.name,
-        price: selectedDrink.price,
-        customizations: customizations.join(', '),
-        finalPrice: finalPrice,
-        isReady: false, // Initialize as not ready
-    };
-    
-    setOrderItems(prev => [...prev, newItem]);
+    const customizationStr = customizations.join(', ');
+    const itemId = `${selectedDrink.id}-${hashCustomizations(customizationStr)}`;
+
+    setOrderItems(prev => {
+        const existingItemIndex = prev.findIndex(item => item.id === itemId);
+        if (existingItemIndex > -1) {
+            const newItems = [...prev];
+            newItems[existingItemIndex].quantity += 1;
+            return newItems;
+        } else {
+            const newItem: OrderItem = {
+                id: itemId,
+                drinkId: selectedDrink.id,
+                name: selectedDrink.name,
+                price: selectedDrink.price,
+                customizations: customizationStr,
+                finalPrice: finalPrice,
+                isReady: false,
+                quantity: 1,
+            };
+            return [...prev, newItem];
+        }
+    });
     setIsModifierOpen(false);
   };
 
 
-  const handleRemoveItem = (itemId: string) => {
-    setOrderItems(prev => prev.filter((item) => item.id !== itemId));
+  const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
+    setOrderItems(prev => {
+        if (newQuantity <= 0) {
+            return prev.filter(item => item.id !== itemId);
+        }
+        return prev.map(item => item.id === itemId ? { ...item, quantity: newQuantity } : item);
+    });
   }
 
   const resetOrder = () => {
@@ -177,17 +201,28 @@ export default function AddOrderPage() {
         return;
     }
 
-    const estimatedPrepTime = orderItems.reduce((total, item) => {
+    // Expand items with quantity > 1 for the tracker
+    const trackerItems: OrderItem[] = orderItems.flatMap(item => {
+        if (item.quantity > 1) {
+            return Array.from({ length: item.quantity }, (_, i) => ({
+                ...item,
+                id: `${item.id}-${i}`, // Make each item unique for the tracker
+                quantity: 1,
+            }));
+        }
+        return item;
+    });
+
+    const estimatedPrepTime = trackerItems.reduce((total, item) => {
         const drink = DRINKS.find(d => d.id === item.drinkId);
         return total + (drink ? drink.prepTime * 60 : 0); // convert minutes to seconds
     }, 0);
-
 
     const orderId = `order-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const newOrder: Order = {
         id: orderId,
         customerName: selectedCustomer ? selectedCustomer.name : 'Гость',
-        items: orderItems,
+        items: trackerItems, // Use the expanded list for the tracker
         status: 'готовится',
         createdAt: Date.now(),
         totalPrice: totalPrice,
@@ -206,60 +241,13 @@ export default function AddOrderPage() {
     resetOrder();
     setIsPaymentOpen(false);
   };
-
-  const generateTestOrder = useCallback(() => {
-    if (!firestore) return;
-
-    const numberOfItems = Math.floor(Math.random() * 2) + 1; // 1 or 2 items
-    const orderItems: OrderItem[] = [];
-    let totalPrice = 0;
-    let estimatedPrepTime = 0;
-
-    for (let i = 0; i < numberOfItems; i++) {
-        const randomDrink = DRINKS[Math.floor(Math.random() * DRINKS.length)];
-        const newItem: OrderItem = {
-            id: `${randomDrink.id}-${Date.now()}-${i}`,
-            drinkId: randomDrink.id,
-            name: randomDrink.name,
-            price: randomDrink.price,
-            customizations: '',
-            finalPrice: randomDrink.price,
-            isReady: false,
-        };
-        orderItems.push(newItem);
-        totalPrice += newItem.finalPrice;
-        estimatedPrepTime += randomDrink.prepTime * 60; // in seconds
-    }
-    
-    const orderId = `test-order-${Date.now()}`;
-    const newOrder: Order = {
-        id: orderId,
-        customerName: 'Тестовый клиент',
-        items: orderItems,
-        status: 'готовится',
-        createdAt: Date.now(),
-        totalPrice: totalPrice,
-        paymentMethod: Math.random() > 0.5 ? 'card' : 'cash',
-        estimatedPrepTime: estimatedPrepTime,
-    };
-
-    const orderRef = doc(firestore, 'orders', orderId);
-    setDocumentNonBlocking(orderRef, newOrder, {});
-
-    toast({
-        title: "Тестовый заказ создан!",
-        description: "Он появится на трекере.",
-    });
-
-  }, [firestore, toast]);
-
-
+  
   return (
     <div className="flex h-dvh flex-col bg-background">
-      <AppHeader title="Касса" showTestOrderButton onTestOrderClick={generateTestOrder} />
+      <AppHeader title="Касса" />
       
       <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0 overflow-hidden">
-        <div className="p-4 md:p-6 overflow-y-auto md:col-span-2">
+        <ScrollArea className="p-4 md:p-6 md:col-span-2">
             <h2 className="text-2xl font-bold font-headline mb-4">Ассортимент</h2>
             {Object.entries(DrinkCategories).map(([category, drinks]) => (
                 <div key={category} className="mb-6">
@@ -279,10 +267,10 @@ export default function AddOrderPage() {
                     </div>
                 </div>
             ))}
-        </div>
+        </ScrollArea>
 
-        <div className="flex flex-col border-l bg-card p-4 md:p-6">
-           <div className="flex-1 overflow-y-auto">
+        <div className="flex flex-col border-l bg-card">
+           <div className="p-4 md:p-6 pb-0">
              <h2 className="text-2xl font-bold font-headline mb-1">Текущий заказ</h2>
              
              <div className="mt-4 mb-4">
@@ -334,45 +322,55 @@ export default function AddOrderPage() {
                    Для гостя без карты лояльности оставьте поле пустым.
                 </p>
              </div>
+           </div>
 
-
-            {orderItems.length > 0 ? (
-                <div className="space-y-3">
-                    {orderItems.map((item) => (
-                        <Card key={item.id} className="p-3">
-                            <div className="flex justify-between items-start">
-                                <div>
-                                    <p className="font-semibold">{item.name}</p>
-                                    {item.customizations && <p className="text-xs text-muted-foreground">{item.customizations}</p>}
+           <ScrollArea className="flex-1 px-4 md:px-6">
+                {orderItems.length > 0 ? (
+                    <div className="space-y-2">
+                        {orderItems.map((item) => (
+                            <Card key={item.id} className="p-3">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex-1">
+                                        <p className="font-semibold leading-tight">{item.name}</p>
+                                        {item.customizations && <p className="text-xs text-muted-foreground mt-1">{item.customizations}</p>}
+                                    </div>
+                                    <div className="text-right ml-2">
+                                        <p className="font-semibold">{item.finalPrice * item.quantity} руб.</p>
+                                    </div>
                                 </div>
-                                <div className="text-right">
-                                    <p className="font-semibold">{item.finalPrice} руб.</p>
-                                    <button onClick={() => handleRemoveItem(item.id)} className="text-destructive hover:text-destructive/80 mt-1">
+                                <div className="flex items-center justify-between mt-2">
+                                    <div className="flex items-center gap-2">
+                                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}>
+                                            <Minus className="h-4 w-4" />
+                                        </Button>
+                                        <span className="font-bold w-4 text-center">{item.quantity}</span>
+                                        <Button variant="outline" size="icon" className="h-7 w-7" onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}>
+                                            <Plus className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                     <button onClick={() => handleUpdateQuantity(item.id, 0)} className="text-destructive hover:text-destructive/80">
                                         <Trash2 className="h-4 w-4"/>
                                     </button>
                                 </div>
-                            </div>
-                        </Card>
-                    ))}
-                </div>
-            ) : (
-                <div className="flex h-full items-center justify-center text-center">
-                    <p className="text-muted-foreground">Выберите напитки из ассортимента слева, чтобы начать.</p>
-                </div>
-            )}
-           </div>
+                            </Card>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex h-full items-center justify-center text-center">
+                        <p className="text-muted-foreground">Выберите напитки из ассортимента, чтобы начать.</p>
+                    </div>
+                )}
+           </ScrollArea>
            
-           <Separator className="my-4"/>
-
-            <div className="mt-auto space-y-4">
+            <div className="p-4 md:p-6 border-t mt-auto bg-card">
                  <div className="flex justify-between items-center text-xl font-bold">
                     <span>Итого:</span>
                     <span>{totalPrice} руб.</span>
                 </div>
-                <Button size="lg" className="w-full" onClick={() => setIsPaymentOpen(true)} disabled={orderItems.length === 0}>
+                <Button size="lg" className="w-full mt-4" onClick={() => setIsPaymentOpen(true)} disabled={orderItems.length === 0}>
                     К оплате
                 </Button>
-                 <Button variant="ghost" size="sm" className="w-full text-destructive" onClick={resetOrder}>
+                 <Button variant="ghost" size="sm" className="w-full text-destructive mt-2" onClick={resetOrder}>
                     Сбросить заказ
                 </Button>
             </div>
@@ -387,8 +385,7 @@ export default function AddOrderPage() {
                 <DialogHeader>
                     <DialogTitle>Настроить «{selectedDrink.name}»</DialogTitle>
                 </DialogHeader>
-                <div className="flex max-h-[60vh] flex-col">
-                  <ScrollArea className="flex-1 pr-4">
+                <ScrollArea className="max-h-[60vh] -mr-4 pr-4">
                       <div className="space-y-6">
                           {selectedDrink.modifiers.map(group => (
                               <div key={group.id}>
@@ -430,8 +427,7 @@ export default function AddOrderPage() {
                           ))}
                       </div>
                   </ScrollArea>
-                </div>
-                <DialogFooter>
+                <DialogFooter className="mt-4">
                     <Button size="lg" className="w-full" onClick={handleAddDrinkToOrder}>
                         <Plus className="mr-2"/> Добавить в заказ
                     </Button>
@@ -453,8 +449,8 @@ export default function AddOrderPage() {
                     <div className="space-y-1 pr-4">
                     {orderItems.map(item => (
                         <div key={item.id} className="flex justify-between text-sm">
-                            <span>{item.name}{item.customizations ? ` (${item.customizations})` : ''}</span>
-                            <span>{item.finalPrice} руб.</span>
+                            <span>{item.name} x{item.quantity}{item.customizations ? ` (${item.customizations})` : ''}</span>
+                            <span>{item.finalPrice * item.quantity} руб.</span>
                         </div>
                     ))}
                     </div>
