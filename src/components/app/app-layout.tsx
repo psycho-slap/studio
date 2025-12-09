@@ -38,32 +38,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <SidebarGroup>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <Link href="/dashboard">
-                                    <SidebarMenuButton isActive={isActive('/dashboard')}>
+                                <Link href="/lk/su/dashboard">
+                                    <SidebarMenuButton isActive={isActive('/lk/su/dashboard')}>
                                         <BarChart />
                                         Панель
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
-                               <Link href="/products">
-                                    <SidebarMenuButton isActive={isActive('/products')} disabled>
+                               <Link href="/lk/su/products">
+                                    <SidebarMenuButton isActive={isActive('/lk/su/products')}>
                                         <Package />
                                         Товары
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
                              <SidebarMenuItem>
-                                <Link href="/inventory">
-                                    <SidebarMenuButton isActive={isActive('/inventory')} disabled>
+                                <Link href="/lk/su/inventory">
+                                    <SidebarMenuButton isActive={isActive('/lk/su/inventory')}>
                                         <Warehouse />
                                         Склад
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
                              <SidebarMenuItem>
-                                <Link href="/devices">
-                                    <SidebarMenuButton isActive={isActive('/devices')} disabled>
+                                <Link href="/lk/su/devices">
+                                    <SidebarMenuButton isActive={isActive('/lk/su/devices')}>
                                         <HardDrive />
                                         Устройства
                                     </SidebarMenuButton>
