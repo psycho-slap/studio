@@ -51,7 +51,7 @@ export default function CompletedOrdersPage() {
                     </h1>
                 </div>
                 <Button variant="outline" asChild>
-                <Link href="/tracker">
+                <Link href="/">
                     <ArrowLeft className="mr-2 h-4 w-4" />
                     Назад к трекеру
                 </Link>

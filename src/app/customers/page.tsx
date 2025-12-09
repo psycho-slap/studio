@@ -87,7 +87,7 @@ export default function CustomersPage() {
                 </Link>
             </Button>
             <Button variant="outline" asChild>
-            <Link href="/tracker">
+            <Link href="/">
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Назад к трекеру
             </Link>
