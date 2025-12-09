@@ -13,6 +13,8 @@ import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 const playNotificationSound = () => {
   try {
     const audio = new Audio('/notification.mp3');
+    // We can only play audio after a user gesture. The fact that the user
+    // toggled the sound switch counts as that gesture.
     audio.play().catch(e => console.error("Error playing notification sound:", e));
   } catch (error) {
     console.error("Could not play notification sound:", error);
@@ -24,6 +26,7 @@ export default function TrackerPage() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
   const firestore = useFirestore();
+  const [soundEnabled, setSoundEnabled] = useState(false);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -56,13 +59,14 @@ export default function TrackerPage() {
 
     if (
       prevOrdersRef.current !== null && // Don't play on initial load
-      currentPreparingOrders.length > prevPreparingOrders.length
+      currentPreparingOrders.length > prevPreparingOrders.length &&
+      soundEnabled // Only play if user has enabled it
     ) {
       playNotificationSound();
     }
 
     prevOrdersRef.current = orders;
-  }, [orders, areOrdersLoading]);
+  }, [orders, areOrdersLoading, soundEnabled]);
 
 
   const completeOrder = useCallback((orderId: string) => {
@@ -105,7 +109,11 @@ export default function TrackerPage() {
 
   return (
     <div className="flex h-dvh w-full flex-col bg-background font-body text-foreground">
-      <AppHeader />
+      <AppHeader 
+        showSoundControl={true}
+        soundEnabled={soundEnabled}
+        onSoundToggle={setSoundEnabled}
+      />
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="mx-auto max-w-6xl">
             <h2 className="text-2xl font-bold font-headline mb-4">Активные заказы ({preparingOrders.length})</h2>
