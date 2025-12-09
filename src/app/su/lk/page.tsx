@@ -105,15 +105,15 @@ export default function DashboardPage() {
 
     return (
        <div className="flex-1 p-4 md:p-6 w-full">
-            <div className="flex justify-between items-center mb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
                 <h2 className="text-2xl font-bold">Показатели за день</h2>
-                 <div className="flex items-center gap-2">
+                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                     <Popover>
                         <PopoverTrigger asChild>
                         <Button
                             variant={"outline"}
                             className={cn(
-                            "w-[240px] justify-start text-left font-normal",
+                            "w-full sm:w-[240px] justify-start text-left font-normal",
                             !selectedDate && "text-muted-foreground"
                             )}
                         >
@@ -131,7 +131,7 @@ export default function DashboardPage() {
                         </PopoverContent>
                     </Popover>
                     <Select value={paymentMethodFilter} onValueChange={(value: 'all' | 'card' | 'cash') => setPaymentMethodFilter(value)}>
-                        <SelectTrigger className="w-[180px]">
+                        <SelectTrigger className="w-full sm:w-[180px]">
                             <SelectValue placeholder="Способ оплаты" />
                         </SelectTrigger>
                         <SelectContent>
@@ -144,7 +144,7 @@ export default function DashboardPage() {
             </div>
            
             {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Общая выручка</CardTitle>
@@ -189,50 +189,52 @@ export default function DashboardPage() {
                     <CardTitle>Заказы за день</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                            <TableHead>Дата</TableHead>
-                            <TableHead>Время</TableHead>
-                            <TableHead>Клиент</TableHead>
-                            <TableHead>Состав заказа</TableHead>
-                            <TableHead>Сумма</TableHead>
-                            <TableHead>Тип оплаты</TableHead>
-                            <TableHead>Статус</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {orders && orders.length > 0 ? (
-                            orders.map((order) => (
-                                <TableRow key={order.id}>
-                                    <TableCell>{format(order.createdAt, 'dd.MM.yyyy')}</TableCell>
-                                    <TableCell>{format(order.createdAt, 'HH:mm:ss')}</TableCell>
-                                    <TableCell>{order.customerName}</TableCell>
-                                    <TableCell>{order.items.map(i => i.name).join(', ')}</TableCell>
-                                    <TableCell>{order.totalPrice} руб.</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline">
-                                            {order.paymentMethod === 'card' ? 'Карта' : 'Наличные'}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={order.status === 'завершен' ? 'secondary' : 'default'}>
-                                            {order.status}
-                                        </Badge>
+                    <div className="overflow-x-auto">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                <TableHead>Время</TableHead>
+                                <TableHead>Клиент</TableHead>
+                                <TableHead className="hidden md:table-cell">Состав</TableHead>
+                                <TableHead>Сумма</TableHead>
+                                <TableHead>Оплата</TableHead>
+                                <TableHead>Статус</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {orders && orders.length > 0 ? (
+                                orders.map((order) => (
+                                    <TableRow key={order.id}>
+                                        <TableCell>{format(order.createdAt, 'HH:mm')}</TableCell>
+                                        <TableCell>{order.customerName}</TableCell>
+                                        <TableCell className="hidden md:table-cell">{order.items.map(i => i.name).join(', ')}</TableCell>
+                                        <TableCell>{order.totalPrice} руб.</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline">
+                                                {order.paymentMethod === 'card' ? 'Карта' : 'Наличные'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={order.status === 'завершен' ? 'secondary' : 'default'}>
+                                                {order.status}
+                                            </Badge>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                                ) : (
+                                <TableRow>
+                                    <TableCell colSpan={6} className="h-24 text-center">
+                                        За выбранный период заказов не найдено.
                                     </TableCell>
                                 </TableRow>
-                            ))
-                            ) : (
-                            <TableRow>
-                                <TableCell colSpan={7} className="h-24 text-center">
-                                    За выбранный период заказов не найдено.
-                                </TableCell>
-                            </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </div>
                 </CardContent>
             </Card>
        </div>
     );
 }
+
+    

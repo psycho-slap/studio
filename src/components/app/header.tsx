@@ -3,6 +3,13 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from "@/components/ui/sheet"
+import { Menu } from 'lucide-react';
+
 
 interface AppHeaderProps {
   title?: string;
@@ -33,7 +40,7 @@ export default function AppHeader({
       </div>
       <div className="flex items-center gap-4">
         
-        <div className="flex gap-2">
+        <div className="hidden sm:flex gap-2">
            <Button variant="ghost" asChild>
             <Link href="/su/app/tracker">
               <Coffee className="mr-2 h-4 w-4" />
@@ -65,7 +72,51 @@ export default function AppHeader({
             </Button>
           )}
         </div>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="sm:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Открыть меню</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right">
+             <div className="flex flex-col gap-4 mt-8">
+               <Button variant="ghost" asChild>
+                <Link href="/su/app/tracker">
+                  <Coffee className="mr-2 h-4 w-4" />
+                  Трекер
+                </Link>
+              </Button>
+              <Button variant="secondary" asChild>
+                <Link href="/su/app/customers">
+                  <Users className="mr-2 h-4 w-4" />
+                  Клиенты
+                </Link>
+              </Button>
+              <Button asChild>
+                <Link href="/su/app/add-order">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Касса
+                </Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/su/app/completed">
+                  <History className="mr-2 h-4 w-4" />
+                  Завершенные
+                </Link>
+              </Button>
+              {showTestOrderButton && (
+                <Button variant="outline" onClick={onTestOrderClick}>
+                  <TestTube2 className="mr-2 h-4 w-4" />
+                  Тестовый заказ
+                </Button>
+              )}
+            </div>
+          </SheetContent>
+        </Sheet>
       </div>
     </header>
   );
 }
+
+    

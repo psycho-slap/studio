@@ -68,8 +68,8 @@ export default function CustomersPage() {
     <div className="flex min-h-dvh flex-col bg-background">
       <AppHeader title="Клиентская база" />
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
+        <Card className="max-w-4xl mx-auto">
+          <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <CardTitle>Список клиентов</CardTitle>
             <Button asChild>
                 <Link href="/su/app/customers/new">
@@ -79,41 +79,45 @@ export default function CustomersPage() {
             </Button>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Имя</TableHead>
-                  <TableHead>Номер телефона</TableHead>
-                  <TableHead>Заметки</TableHead>
-                  <TableHead className="text-right">Действия</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customers && customers.length > 0 ? (
-                  customers.map((customer) => (
-                    <TableRow key={customer.id}>
-                      <TableCell className="font-medium">{customer.name}</TableCell>
-                      <TableCell>{customer.phoneNumber}</TableCell>
-                      <TableCell>{customer.notes || '-'}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="sm" asChild>
-                          <Link href={`/su/app/customers/edit/${customer.id}`}>Редактировать</Link>
-                        </Button>
-                      </TableCell>
+            <div className="overflow-x-auto">
+                <Table>
+                <TableHeader>
+                    <TableRow>
+                    <TableHead>Имя</TableHead>
+                    <TableHead>Номер телефона</TableHead>
+                    <TableHead className="hidden sm:table-cell">Заметки</TableHead>
+                    <TableHead className="text-right">Действия</TableHead>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={4} className="h-24 text-center">
-                      Клиентов пока нет.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                    {customers && customers.length > 0 ? (
+                    customers.map((customer) => (
+                        <TableRow key={customer.id}>
+                        <TableCell className="font-medium">{customer.name}</TableCell>
+                        <TableCell>{customer.phoneNumber}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{customer.notes || '-'}</TableCell>
+                        <TableCell className="text-right">
+                            <Button variant="outline" size="sm" asChild>
+                            <Link href={`/su/app/customers/edit/${customer.id}`}>Редактировать</Link>
+                            </Button>
+                        </TableCell>
+                        </TableRow>
+                    ))
+                    ) : (
+                    <TableRow>
+                        <TableCell colSpan={4} className="h-24 text-center">
+                        Клиентов пока нет.
+                        </TableCell>
+                    </TableRow>
+                    )}
+                </TableBody>
+                </Table>
+            </div>
           </CardContent>
         </Card>
       </main>
     </div>
   );
 }
+
+    

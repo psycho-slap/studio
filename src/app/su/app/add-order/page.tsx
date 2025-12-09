@@ -246,13 +246,13 @@ export default function AddOrderPage() {
     <div className="flex h-dvh flex-col bg-background">
       <AppHeader title="Касса" />
       
-      <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0 overflow-hidden">
-        <ScrollArea className="p-4 md:p-6 md:col-span-2">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-0 overflow-hidden">
+        <ScrollArea className="p-4 md:p-6 lg:col-span-2">
             <h2 className="text-2xl font-bold font-headline mb-4">Ассортимент</h2>
             {Object.entries(DrinkCategories).map(([category, drinks]) => (
                 <div key={category} className="mb-6">
                     <h3 className="text-xl font-semibold mb-3 text-muted-foreground">{category}</h3>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3">
                         {drinks.map(drink => (
                            <Button 
                              key={drink.id}
@@ -500,3 +500,5 @@ export default function AddOrderPage() {
     </div>
   );
 }
+
+    
