@@ -12,7 +12,7 @@ export default function AppHeader() {
       </div>
       <div className='flex gap-2'>
         <Button variant="secondary" asChild>
-            <Link href="/dashboard">
+            <Link href="/">
                 <LayoutDashboard className="mr-2 h-4 w-4" />
                 Дашборд
             </Link>
