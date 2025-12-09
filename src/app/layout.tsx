@@ -6,7 +6,7 @@ import { FirebaseClientProvider } from '@/firebase';
 export const metadata: Metadata = {
   title: {
     template: 'ИС | %s',
-    default: 'ИС | БаристаТрек',
+    default: 'ИС | Трекер',
   },
   description: 'Отслеживайте и управляйте кофейными заказами с легкостью.',
 };
