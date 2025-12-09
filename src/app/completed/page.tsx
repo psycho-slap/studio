@@ -6,23 +6,24 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, History, Loader2 } from 'lucide-react';
 import OrderCard from '@/components/app/order-card';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
 
 export default function CompletedOrdersPage() {
     const firestore = useFirestore();
+    const { user } = useUser();
 
     const oneHourAgo = Date.now() - (60 * 60 * 1000);
 
     const completedOrdersQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
+        if (!firestore || !user) return null; // Wait for user
         return query(
             collection(firestore, 'orders'),
             where('status', '==', 'завершен'),
             where('createdAt', '>', oneHourAgo),
             orderBy('createdAt', 'desc')
         );
-    }, [firestore, oneHourAgo]);
+    }, [firestore, oneHourAgo, user]);
 
     const { data: completedOrders, isLoading } = useCollection<Order>(completedOrdersQuery);
 

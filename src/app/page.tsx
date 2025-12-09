@@ -22,12 +22,12 @@ export default function Home() {
   }, [isUserLoading, user, auth]);
 
   const ordersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null; // Wait for user
     return query(
       collection(firestore, 'orders'),
       orderBy('createdAt', 'asc')
     );
-  }, [firestore]);
+  }, [firestore, user]);
 
   const { data: orders, isLoading: areOrdersLoading } = useCollection<Order>(ordersQuery);
 
@@ -37,7 +37,9 @@ export default function Home() {
     updateDocumentNonBlocking(orderRef, { status: 'завершен', completedAt: Date.now() });
   }, [firestore]);
   
-  if (isUserLoading || areOrdersLoading) {
+  const isLoading = isUserLoading || areOrdersLoading;
+
+  if (isLoading) {
     return (
         <div className="flex h-dvh w-full flex-col items-center justify-center bg-background">
             <div className="flex items-center gap-3">

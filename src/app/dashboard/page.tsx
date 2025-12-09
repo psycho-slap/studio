@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { Order } from '@/lib/types';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -47,6 +47,12 @@ export default function DashboardPage() {
     const [selectedDate, setSelectedDate] = useState<Date>(new Date());
     const [paymentMethodFilter, setPaymentMethodFilter] = useState<'all' | 'card' | 'cash'>('all');
 
+    useEffect(() => {
+        if (!isUserLoading && !user) {
+            initiateAnonymousSignIn(auth);
+        }
+    }, [isUserLoading, user, auth]);
+
 
     const dateRange = useMemo(() => {
         const start = getStartOfDay(selectedDate);
@@ -88,8 +94,9 @@ export default function DashboardPage() {
         return { totalRevenue, orderCount, avgCheck, avgPrepTime };
     }, [orders]);
 
+    const isLoading = isUserLoading || areOrdersLoading;
 
-    if (isUserLoading || areOrdersLoading) {
+    if (isLoading) {
         return (
             <div className="flex h-dvh w-full flex-col items-center justify-center bg-background">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
