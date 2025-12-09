@@ -4,7 +4,10 @@ import './globals.css';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'БаристаТрек',
+  title: {
+    template: 'ИС | %s',
+    default: 'ИС | БаристаТрек',
+  },
   description: 'Отслеживайте и управляйте кофейными заказами с легкостью.',
 };
 

@@ -1,3 +1,4 @@
+// This page now has a layout that sets the title
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -57,6 +58,12 @@ export default function AddOrderPage() {
   
   // State for customer selection popover
   const [isCustomerPopoverOpen, setIsCustomerPopoverOpen] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
 
   // Firebase hooks
   const firestore = useFirestore();
@@ -245,7 +252,7 @@ export default function AddOrderPage() {
              
              <div className="mt-4 mb-4">
                 <Label className="mb-2 block text-sm font-medium">Клиент</Label>
-                <div className="flex items-center gap-2">
+                {isClient && <div className="flex items-center gap-2">
                     <Popover open={isCustomerPopoverOpen} onOpenChange={setIsCustomerPopoverOpen}>
                         <PopoverTrigger asChild>
                             <Button variant="outline" className="w-full justify-start">
@@ -287,7 +294,7 @@ export default function AddOrderPage() {
                             <UserRoundX className="h-4 w-4 text-destructive"/>
                         </Button>
                     )}
-                </div>
+                </div>}
                 <p className="text-xs text-muted-foreground mt-2">
                    Для гостя без карты лояльности оставьте поле пустым.
                 </p>
@@ -462,7 +469,3 @@ export default function AddOrderPage() {
     </div>
   );
 }
-
-    
-
-    

@@ -24,6 +24,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
+import type { Metadata } from 'next';
+
+// This is a Client Component, so we can't use `export const metadata`.
+// Instead, we can set the title using `document.title` in a `useEffect` hook.
+function useDocumentTitle(title: string) {
+    useEffect(() => {
+        document.title = title;
+    }, [title]);
+}
 
 
 const getStartOfDay = (date: Date) => {
@@ -40,6 +49,7 @@ const getEndOfDay = (date: Date) => {
 
 
 export default function DashboardPage() {
+    useDocumentTitle('ИС | Панель руководителя');
     const firestore = useFirestore();
     const { user, isUserLoading } = useUser();
     const auth = useAuth();
