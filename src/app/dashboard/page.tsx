@@ -223,6 +223,7 @@ export default function DashboardPage() {
                              <Table>
                                 <TableHeader>
                                     <TableRow>
+                                    <TableHead>Дата</TableHead>
                                     <TableHead>Время</TableHead>
                                     <TableHead>Клиент</TableHead>
                                     <TableHead>Состав заказа</TableHead>
@@ -235,6 +236,7 @@ export default function DashboardPage() {
                                     {orders && orders.length > 0 ? (
                                     orders.map((order) => (
                                         <TableRow key={order.id}>
+                                            <TableCell>{format(order.createdAt, 'dd.MM.yyyy')}</TableCell>
                                             <TableCell>{format(order.createdAt, 'HH:mm:ss')}</TableCell>
                                             <TableCell>{order.customerName}</TableCell>
                                             <TableCell>{order.items.map(i => i.name).join(', ')}</TableCell>
@@ -253,7 +255,7 @@ export default function DashboardPage() {
                                     ))
                                     ) : (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="h-24 text-center">
+                                        <TableCell colSpan={7} className="h-24 text-center">
                                             За выбранный период заказов не найдено.
                                         </TableCell>
                                     </TableRow>
