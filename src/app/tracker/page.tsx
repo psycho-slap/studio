@@ -4,11 +4,11 @@ import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Order } from '@/lib/types';
 import AppHeader from '@/components/app/header';
 import OrderCard from '@/components/app/order-card';
-import { useUser, useAuth, useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { Loader2 } from 'lucide-react';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { Button } from '@/components/ui/button';
 
 const playNotificationSound = () => {
   try {
@@ -23,26 +23,21 @@ const playNotificationSound = () => {
 
 
 export default function TrackerPage() {
-  const { user, isUserLoading } = useUser();
-  const auth = useAuth();
   const firestore = useFirestore();
   const [soundEnabled, setSoundEnabled] = useState(false);
 
-  useEffect(() => {
-    if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
-    }
-  }, [isUserLoading, user, auth]);
+  // We don't require user login for this page anymore.
+  // We'll fetch data publicly if rules allow.
 
   const ordersQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null; // Wait for user
+    if (!firestore) return null;
     return query(
       collection(firestore, 'orders'),
       orderBy('createdAt', 'asc')
     );
-  }, [firestore, user]);
+  }, [firestore]);
 
-  const { data: orders, isLoading: areOrdersLoading } = useCollection<Order>(ordersQuery);
+  const { data: orders, isLoading: areOrdersLoading, error } = useCollection<Order>(ordersQuery);
 
   const prevOrdersRef = useRef<Order[] | null>(null);
 
@@ -75,7 +70,7 @@ export default function TrackerPage() {
     updateDocumentNonBlocking(orderRef, { status: 'завершен', completedAt: Date.now() });
   }, [firestore]);
   
-  const isLoading = isUserLoading || areOrdersLoading;
+  const isLoading = areOrdersLoading;
 
   if (isLoading) {
     return (
@@ -86,24 +81,25 @@ export default function TrackerPage() {
                 Трекер
                 </h1>
             </div>
-            <p className="mt-4 text-muted-foreground">Загрузка заказов и авторизация...</p>
+            <p className="mt-4 text-muted-foreground">Загрузка заказов...</p>
         </div>
     );
   }
   
-  if (!user) {
-    return (
+  if (error) {
+     return (
       <div className="flex h-dvh w-full flex-col items-center justify-center bg-background p-4 text-center">
-        <h1 className="text-2xl font-bold text-destructive">Доступ запрещен</h1>
-        <p className="mt-2 text-muted-foreground">
-          Для просмотра этой страницы необходимо войти в систему.
+        <h1 className="text-2xl font-bold text-destructive">Ошибка загрузки данных</h1>
+        <p className="mt-2 text-muted-foreground max-w-md">
+          Не удалось загрузить заказы. Вероятно, есть проблема с правами доступа к базе данных. Проверьте правила безопасности Firestore.
         </p>
-        <Button onClick={() => initiateAnonymousSignIn(auth)} className="mt-4">
-          Войти как сотрудник
-        </Button>
+         <pre className="mt-4 text-xs bg-muted p-2 rounded-md text-left w-full max-w-md overflow-auto">
+          <code>{error.message}</code>
+        </pre>
       </div>
     );
   }
+
 
   const preparingOrders = orders ? orders.filter(o => o.status === 'готовится') : [];
 
@@ -130,6 +126,7 @@ export default function TrackerPage() {
             ) : (
                 <div className="flex h-64 items-center justify-center rounded-lg border-2 border-dashed border-border mt-4">
                     <p className="text-lg text-muted-foreground">Нет активных заказов.</p>
+
                 </div>
             )}
         </div>
