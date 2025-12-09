@@ -8,6 +8,7 @@ import { Loader2, Volume2 } from 'lucide-react';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
+import AppHeader from '@/components/app/header';
 
 // Helper function to play sound
 const playNotificationSound = (audio: HTMLAudioElement | null) => {
@@ -87,7 +88,7 @@ export default function TrackerPage() {
 
   if (isLoading) {
     return (
-        <div className="flex h-full w-full flex-col items-center justify-center bg-background">
+        <div className="flex h-dvh w-full flex-col items-center justify-center bg-background">
             <div className="flex items-center gap-3">
                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <h1 className="text-3xl font-bold tracking-tight text-primary font-headline">
@@ -101,7 +102,7 @@ export default function TrackerPage() {
   
   if (error) {
      return (
-      <div className="flex h-full w-full flex-col items-center justify-center bg-background p-4 text-center">
+      <div className="flex h-dvh w-full flex-col items-center justify-center bg-background p-4 text-center">
         <h1 className="text-2xl font-bold text-destructive">Ошибка загрузки данных</h1>
         <p className="mt-2 text-muted-foreground max-w-md">
           Не удалось загрузить заказы. Вероятно, есть проблема с правами доступа к базе данных. Проверьте правила безопасности Firestore.
@@ -116,7 +117,8 @@ export default function TrackerPage() {
   const preparingOrders = orders ? orders.filter(o => o.status === 'готовится') : [];
 
   return (
-    <div className="flex h-full w-full flex-col bg-background font-body text-foreground">
+    <div className="flex h-dvh w-full flex-col bg-background font-body text-foreground">
+      <AppHeader title="Трекер" />
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="mx-auto max-w-6xl">
             {!userHasInteracted && (

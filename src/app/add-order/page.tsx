@@ -30,6 +30,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Check as CheckIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import AppHeader from '@/components/app/header';
 
 const DrinkCategories = DRINKS.reduce((acc, drink) => {
   if (!acc[drink.category]) {
@@ -252,16 +253,8 @@ export default function AddOrderPage() {
 
 
   return (
-    <div className="flex h-full flex-col bg-background">
-      <div className='flex items-center justify-between p-4 border-b'>
-          <h1 className="text-2xl font-bold tracking-tight text-primary font-headline">
-          Касса
-          </h1>
-          <Button variant="outline" onClick={generateTestOrder}>
-              <TestTube2 className="mr-2 h-4 w-4" />
-              Тестовый заказ
-          </Button>
-      </div>
+    <div className="flex h-dvh flex-col bg-background">
+      <AppHeader title="Касса" showTestOrderButton onTestOrderClick={generateTestOrder} />
       
       <main className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-0 overflow-hidden">
         <div className="p-4 md:p-6 overflow-y-auto md:col-span-2">

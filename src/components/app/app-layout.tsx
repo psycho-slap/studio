@@ -6,13 +6,9 @@ import {
   SidebarHeader,
   SidebarContent,
   SidebarFooter,
-  SidebarTrigger,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton,
   SidebarGroup,
   SidebarGroupLabel,
   SidebarInset,
@@ -35,12 +31,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <SidebarHeader>
                     <div className="flex items-center gap-2 p-2">
                         <Coffee className="h-8 w-8 text-primary" />
-                        <h1 className="text-xl font-bold text-primary font-headline">ИС Бариста</h1>
+                        <h1 className="text-xl font-bold text-primary font-headline">ИС Руководителя</h1>
                     </div>
                 </SidebarHeader>
                 <SidebarContent>
                     <SidebarGroup>
-                        <SidebarGroupLabel>Руководитель</SidebarGroupLabel>
                         <SidebarMenu>
                             <SidebarMenuItem>
                                 <Link href="/dashboard" legacyBehavior passHref>
@@ -76,45 +71,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </SidebarMenuItem>
                         </SidebarMenu>
                     </SidebarGroup>
-
-                    <SidebarGroup>
-                        <SidebarGroupLabel>Бариста</SidebarGroupLabel>
-                         <SidebarMenu>
-                            <SidebarMenuItem>
-                                <Link href="/" legacyBehavior passHref>
-                                    <SidebarMenuButton isActive={isActive('/')}>
-                                        <Coffee />
-                                        Трекер
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <Link href="/add-order" legacyBehavior passHref>
-                                    <SidebarMenuButton isActive={isActive('/add-order')}>
-                                        <PlusCircle />
-                                        Касса
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                               <Link href="/completed" legacyBehavior passHref>
-                                    <SidebarMenuButton isActive={isActive('/completed')}>
-                                        <History />
-                                        Завершенные
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <Link href="/customers" legacyBehavior passHref>
-                                    <SidebarMenuButton isActive={isActive('/customers')}>
-                                        <Users />
-                                        Клиенты
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </SidebarGroup>
-
                 </SidebarContent>
                 <SidebarFooter>
                     <SidebarMenu>

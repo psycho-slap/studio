@@ -27,15 +27,6 @@ import { cn } from '@/lib/utils';
 import type { Metadata } from 'next';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-// This is a Client Component, so we can't use `export const metadata`.
-// Instead, we can set the title using `document.title` in a `useEffect` hook.
-function useDocumentTitle(title: string) {
-    useEffect(() => {
-        document.title = title;
-    }, [title]);
-}
-
-
 const getStartOfDay = (date: Date) => {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
@@ -60,7 +51,6 @@ function renderPlaceholderTab(title: string, icon: React.ReactNode) {
 
 
 export default function DashboardPage() {
-    useDocumentTitle('ИС | Панель руководителя');
     const firestore = useFirestore();
     const { user, isUserLoading } = useUser();
     const auth = useAuth();
@@ -141,134 +131,153 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="flex min-h-dvh flex-col bg-background p-4 md:p-6">
+       <div className="flex-1 p-4 md:p-6">
+        <Tabs defaultValue="analytics" className="w-full">
             <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Показатели за {format(selectedDate, 'dd MMMM yyyy', { locale: ru })}</h2>
-                <div className="flex items-center gap-2">
-                    <Popover>
-                        <PopoverTrigger asChild>
-                        <Button
-                            variant={"outline"}
-                            className={cn(
-                            "w-[240px] justify-start text-left font-normal",
-                            !selectedDate && "text-muted-foreground"
-                            )}
-                        >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {selectedDate ? format(selectedDate, 'dd MMMM yyyy', { locale: ru }) : <span>Выберите дату</span>}
-                        </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="end">
-                            <Calendar
-                                mode="single"
-                                selected={selectedDate}
-                                onSelect={(date) => date && setSelectedDate(date)}
-                                initialFocus
-                            />
-                        </PopoverContent>
-                    </Popover>
-                    <Select value={paymentMethodFilter} onValueChange={(value: 'all' | 'card' | 'cash') => setPaymentMethodFilter(value)}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Способ оплаты" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">Все</SelectItem>
-                            <SelectItem value="card">Карта</SelectItem>
-                            <SelectItem value="cash">Наличные</SelectItem>
-                        </SelectContent>
-                    </Select>
+                <TabsList>
+                    <TabsTrigger value="analytics"><BarChart className="mr-2"/> Показатели</TabsTrigger>
+                    <TabsTrigger value="products"><Package className="mr-2"/> Товары</TabsTrigger>
+                    <TabsTrigger value="inventory"><Warehouse className="mr-2"/> Склад</TabsTrigger>
+                    <TabsTrigger value="devices"><HardDrive className="mr-2"/> Устройства</TabsTrigger>
+                </TabsList>
+                 <div className="flex items-center gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                "w-[240px] justify-start text-left font-normal",
+                                !selectedDate && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {selectedDate ? format(selectedDate, 'dd MMMM yyyy', { locale: ru }) : <span>Выберите дату</span>}
+                            </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="end">
+                                <Calendar
+                                    mode="single"
+                                    selected={selectedDate}
+                                    onSelect={(date) => date && setSelectedDate(date)}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
+                        <Select value={paymentMethodFilter} onValueChange={(value: 'all' | 'card' | 'cash') => setPaymentMethodFilter(value)}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Способ оплаты" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Все</SelectItem>
+                                <SelectItem value="card">Карта</SelectItem>
+                                <SelectItem value="cash">Наличные</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+            </div>
+           
+            <TabsContent value="analytics">
+                {/* Stats Cards */}
+                <div className="grid gap-4 md:grid-cols-4">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Общая выручка</CardTitle>
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString('ru-RU')} руб.</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Количество заказов</CardTitle>
+                            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.orderCount}</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Средний чек</CardTitle>
+                            <BarChart className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">{stats.avgCheck.toFixed(2)} руб.</div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Среднее время готовки</CardTitle>
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-2xl font-bold">~ {Math.round(stats.avgPrepTime)} сек.</div>
+                        </CardContent>
+                    </Card>
                 </div>
-            </div>
-            {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-4">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Общая выручка</CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.totalRevenue.toLocaleString('ru-RU')} руб.</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Количество заказов</CardTitle>
-                        <ShoppingCart className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.orderCount}</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Средний чек</CardTitle>
-                        <BarChart className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.avgCheck.toFixed(2)} руб.</div>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Среднее время готовки</CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">~ {Math.round(stats.avgPrepTime)} сек.</div>
-                    </CardContent>
-                </Card>
-            </div>
 
-            {/* Recent Orders Table */}
-            <Card className="mt-6">
-                <CardHeader>
-                    <CardTitle>Заказы за день</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                            <TableHead>Дата</TableHead>
-                            <TableHead>Время</TableHead>
-                            <TableHead>Клиент</TableHead>
-                            <TableHead>Состав заказа</TableHead>
-                            <TableHead>Сумма</TableHead>
-                            <TableHead>Тип оплаты</TableHead>
-                            <TableHead>Статус</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {orders && orders.length > 0 ? (
-                            orders.map((order) => (
-                                <TableRow key={order.id}>
-                                    <TableCell>{format(order.createdAt, 'dd.MM.yyyy')}</TableCell>
-                                    <TableCell>{format(order.createdAt, 'HH:mm:ss')}</TableCell>
-                                    <TableCell>{order.customerName}</TableCell>
-                                    <TableCell>{order.items.map(i => i.name).join(', ')}</TableCell>
-                                    <TableCell>{order.totalPrice} руб.</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline">
-                                            {order.paymentMethod === 'card' ? 'Карта' : 'Наличные'}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={order.status === 'завершен' ? 'secondary' : 'default'}>
-                                            {order.status}
-                                        </Badge>
+                {/* Recent Orders Table */}
+                <Card className="mt-6">
+                    <CardHeader>
+                        <CardTitle>Заказы за день</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                <TableHead>Дата</TableHead>
+                                <TableHead>Время</TableHead>
+                                <TableHead>Клиент</TableHead>
+                                <TableHead>Состав заказа</TableHead>
+                                <TableHead>Сумма</TableHead>
+                                <TableHead>Тип оплаты</TableHead>
+                                <TableHead>Статус</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {orders && orders.length > 0 ? (
+                                orders.map((order) => (
+                                    <TableRow key={order.id}>
+                                        <TableCell>{format(order.createdAt, 'dd.MM.yyyy')}</TableCell>
+                                        <TableCell>{format(order.createdAt, 'HH:mm:ss')}</TableCell>
+                                        <TableCell>{order.customerName}</TableCell>
+                                        <TableCell>{order.items.map(i => i.name).join(', ')}</TableCell>
+                                        <TableCell>{order.totalPrice} руб.</TableCell>
+                                        <TableCell>
+                                            <Badge variant="outline">
+                                                {order.paymentMethod === 'card' ? 'Карта' : 'Наличные'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge variant={order.status === 'завершен' ? 'secondary' : 'default'}>
+                                                {order.status}
+                                            </Badge>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                                ) : (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="h-24 text-center">
+                                        За выбранный период заказов не найдено.
                                     </TableCell>
                                 </TableRow>
-                            ))
-                            ) : (
-                            <TableRow>
-                                <TableCell colSpan={7} className="h-24 text-center">
-                                    За выбранный период заказов не найдено.
-                                </TableCell>
-                            </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </div>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="products">
+                {renderPlaceholderTab("Товары", <Package className="w-16 h-16 text-muted-foreground" />)}
+            </TabsContent>
+            <TabsContent value="inventory">
+                {renderPlaceholderTab("Склад", <Warehouse className="w-16 h-16 text-muted-foreground" />)}
+            </TabsContent>
+            <TabsContent value="devices">
+                {renderPlaceholderTab("Устройства", <HardDrive className="w-16 h-16 text-muted-foreground" />)}
+            </TabsContent>
+        </Tabs>
+       </div>
     );
 }

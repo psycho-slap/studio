@@ -17,6 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Customer } from '@/lib/types';
 import { initiateAnonymousSignIn } from '@/firebase/non-blocking-login';
+import AppHeader from '@/components/app/header';
 
 export default function CustomersPage() {
   const firestore = useFirestore();
@@ -72,22 +73,7 @@ export default function CustomersPage() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-background">
-      <header className="flex h-16 shrink-0 items-center justify-between border-b bg-card px-4 shadow-sm md:px-6">
-        <div className="flex items-center gap-3">
-          <Users className="h-7 w-7 text-primary" />
-          <h1 className="text-2xl font-bold tracking-tight text-primary font-headline">
-            Клиентская база
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-            <Button asChild>
-                <Link href="/customers/new">
-                    <UserPlus className="mr-2"/>
-                    Новый клиент
-                </Link>
-            </Button>
-        </div>
-      </header>
+      <AppHeader title="Клиентская база" />
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <Card>
           <CardHeader>
