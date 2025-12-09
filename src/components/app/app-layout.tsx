@@ -38,8 +38,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <SidebarGroup>
                         <SidebarMenu>
                             <SidebarMenuItem>
-                                <Link href="/lk/su/dashboard">
-                                    <SidebarMenuButton isActive={isActive('/lk/su/dashboard')}>
+                                <Link href="/lk/su">
+                                    <SidebarMenuButton isActive={isActive('/lk/su')}>
                                         <BarChart />
                                         Панель
                                     </SidebarMenuButton>
