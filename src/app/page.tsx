@@ -1,14 +1,15 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import type { Order } from '@/lib/types';
+import type { Order, OrderItem } from '@/lib/types';
 import AppHeader from '@/components/app/header';
 import OrderCard from '@/components/app/order-card';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { Loader2, Volume2 } from 'lucide-react';
+import { Loader2, Volume2, PlusCircle } from 'lucide-react';
 import { collection, query, where, orderBy, doc } from 'firebase/firestore';
-import { updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { updateDocumentNonBlocking, setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 import { Button } from '@/components/ui/button';
+import { DRINKS } from '@/lib/data';
 
 // Helper function to play sound
 const playNotificationSound = (audio: HTMLAudioElement | null) => {
@@ -20,7 +21,6 @@ const playNotificationSound = (audio: HTMLAudioElement | null) => {
 
 export default function TrackerPage() {
   const firestore = useFirestore();
-  const [soundEnabled, setSoundEnabled] = useState(true); // Sound is conceptually "on"
   const [userHasInteracted, setUserHasInteracted] = useState(false);
 
   // Ref to hold the single Audio object
@@ -57,14 +57,13 @@ export default function TrackerPage() {
     if (
       prevOrdersRef.current !== null &&
       currentPreparingOrders.length > prevPreparingOrders.length &&
-      soundEnabled &&
       userHasInteracted
     ) {
       playNotificationSound(audioRef.current);
     }
 
     prevOrdersRef.current = orders;
-  }, [orders, areOrdersLoading, soundEnabled, userHasInteracted]);
+  }, [orders, areOrdersLoading, userHasInteracted]);
 
   // This function is called when the user clicks the initial sound activation button.
   const handleUserInteraction = () => {
@@ -83,6 +82,51 @@ export default function TrackerPage() {
     const orderRef = doc(firestore, 'orders', orderId);
     updateDocumentNonBlocking(orderRef, { status: 'завершен', completedAt: Date.now() });
   }, [firestore]);
+
+  const generateTestOrder = useCallback(() => {
+    if (!firestore) return;
+
+    const numberOfItems = Math.floor(Math.random() * 2) + 1; // 1 or 2 items
+    const orderItems: OrderItem[] = [];
+    let totalPrice = 0;
+    let estimatedPrepTime = 0;
+
+    for (let i = 0; i < numberOfItems; i++) {
+        const randomDrink = DRINKS[Math.floor(Math.random() * DRINKS.length)];
+        const newItem: OrderItem = {
+            id: `${randomDrink.id}-${Date.now()}-${i}`,
+            drinkId: randomDrink.id,
+            name: randomDrink.name,
+            price: randomDrink.price,
+            customizations: '',
+            finalPrice: randomDrink.price,
+        };
+        orderItems.push(newItem);
+        totalPrice += newItem.finalPrice;
+        estimatedPrepTime += randomDrink.prepTime * 60; // in seconds
+    }
+    
+    const orderId = `test-order-${Date.now()}`;
+    const newOrder: Order = {
+        id: orderId,
+        customerName: 'Тестовый клиент',
+        items: orderItems,
+        status: 'готовится',
+        createdAt: Date.now(),
+        totalPrice: totalPrice,
+        paymentMethod: Math.random() > 0.5 ? 'card' : 'cash',
+        estimatedPrepTime: estimatedPrepTime,
+    };
+
+    const orderRef = doc(firestore, 'orders', orderId);
+    setDocumentNonBlocking(orderRef, newOrder, {});
+
+    // If this is the first interaction, also enable sounds
+    if (!userHasInteracted) {
+      handleUserInteraction();
+    }
+
+  }, [firestore, userHasInteracted]);
   
   const isLoading = areOrdersLoading;
 
@@ -120,6 +164,8 @@ export default function TrackerPage() {
     <div className="flex h-dvh w-full flex-col bg-background font-body text-foreground">
       <AppHeader 
         title="Трекер"
+        showTestOrderButton={true}
+        onTestOrderClick={generateTestOrder}
       />
       <main className="flex-1 overflow-y-auto p-4 md:p-6">
         <div className="mx-auto max-w-6xl">

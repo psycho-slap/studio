@@ -1,23 +1,19 @@
-import { PlusCircle, History, Users, LayoutDashboard, Bell, BellOff } from 'lucide-react';
+import { PlusCircle, History, Users, LayoutDashboard, TestTube2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useState, useEffect } from 'react';
 
 interface AppHeaderProps {
   title?: string;
-  showSoundControl?: boolean;
-  soundEnabled?: boolean;
-  onSoundToggle?: (enabled: boolean) => void;
+  showTestOrderButton?: boolean;
+  onTestOrderClick?: () => void;
 }
 
 export default function AppHeader({
   title = 'Трекер',
-  showSoundControl = false,
-  soundEnabled = false,
-  onSoundToggle,
+  showTestOrderButton = false,
+  onTestOrderClick,
 }: AppHeaderProps) {
   const [isClient, setIsClient] = useState(false);
 
@@ -33,22 +29,11 @@ export default function AppHeader({
         </h1>
       </div>
       <div className="flex items-center gap-4">
-        {isClient && showSoundControl && onSoundToggle && (
-          <div className="flex items-center space-x-2">
-            {soundEnabled ? (
-              <Bell className="text-primary" />
-            ) : (
-              <BellOff className="text-muted-foreground" />
-            )}
-            <Switch
-              id="sound-toggle"
-              checked={soundEnabled}
-              onCheckedChange={onSoundToggle}
-            />
-            <Label htmlFor="sound-toggle" className="text-sm text-muted-foreground">
-              Звук
-            </Label>
-          </div>
+        {isClient && showTestOrderButton && (
+           <Button variant="outline" onClick={onTestOrderClick}>
+             <TestTube2 className="mr-2 h-4 w-4" />
+             Создать тестовый заказ
+           </Button>
         )}
         <div className="flex gap-2">
           <Button variant="secondary" asChild>
