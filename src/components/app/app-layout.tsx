@@ -36,6 +36,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </SidebarHeader>
                 <SidebarContent>
                     <SidebarGroup>
+                        <SidebarGroupLabel>Управление</SidebarGroupLabel>
                         <SidebarMenu>
                             <SidebarMenuItem>
                                 <Link href="/lk/su">
@@ -66,6 +67,35 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                     <SidebarMenuButton isActive={isActive('/lk/su/devices')}>
                                         <HardDrive />
                                         Устройства
+                                    </SidebarMenuButton>
+                                </Link>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroup>
+                     <SidebarGroup>
+                        <SidebarGroupLabel>Рабочие инструменты</SidebarGroupLabel>
+                        <SidebarMenu>
+                            <SidebarMenuItem>
+                                <Link href="/app/tracker">
+                                    <SidebarMenuButton isActive={isActive('/app/tracker')}>
+                                        <Coffee />
+                                        Трекер
+                                    </SidebarMenuButton>
+                                </Link>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                               <Link href="/app/add-order">
+                                    <SidebarMenuButton isActive={isActive('/app/add-order')}>
+                                        <PlusCircle />
+                                        Касса
+                                    </SidebarMenuButton>
+                                </Link>
+                            </SidebarMenuItem>
+                             <SidebarMenuItem>
+                                <Link href="/app/customers">
+                                    <SidebarMenuButton isActive={isActive('/app/customers')}>
+                                        <Users />
+                                        Клиенты
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
