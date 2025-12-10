@@ -1,7 +1,6 @@
 
 {
   "hosting": {
-    "site": "baristatrack-webapp",
     "source": ".",
     "ignore": [
       "firebase.json",
