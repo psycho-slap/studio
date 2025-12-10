@@ -10,6 +10,12 @@
     "frameworksBackend": {
       "id": "baristatrack-webapp",
       "region": "us-central1"
-    }
+    },
+    "rewrites": [
+      {
+        "source": "**",
+        "function": "baristatrack-webapp"
+      }
+    ]
   }
 }

@@ -1,8 +1,8 @@
 export const firebaseConfig = {
-  "projectId": "studio-5148384623-83e0a",
-  "appId": "1:649113811654:web:134ec5a8e70a1382fc35c7",
-  "apiKey": "AIzaSyB4oo7ydznipTWw9Y1vXi-qYYZ9mq2WZgU",
-  "authDomain": "studio-5148384623-83e0a.firebaseapp.com",
-  "measurementId": "",
-  "messagingSenderId": "649113811654"
+  "apiKey": "AIzaSyA73ERRfRAG6U33j2r2LVsao89ePvf9TcQ",
+  "authDomain": "suis-io.firebaseapp.com",
+  "projectId": "suis-io",
+  "storageBucket": "suis-io.appspot.com",
+  "messagingSenderId": "969326085380",
+  "appId": "1:969326085380:web:7a72b2e742576218323c51"
 };
